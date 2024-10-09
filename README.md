@@ -1,5 +1,8 @@
-# cam
-Context Agility Manager enables you to create dashboards for monitoring a server and a client machine, which communicate through Qujata testbed using post-quantum and hybrid encryption protocols.
+# Context Agility Manager
+The Context Agility Manager (CAM) in the PQ-REACT framework facilitates cryptographic agility by automatically selecting and configuring post-quantum and hybrid encryption algorithms tailored to the operational context. Leveraging principles from the PQC research community, CAM dynamically adjusts cryptographic configurations by analyzing real-time data from infrastructure assets and their associated security parameters. This context-aware mechanism takes into account various factors such as compliance with regulatory standards, the availability of cryptographic algorithms, security requirements, and resource constraints. Furthermore, CAM mitigates common issues related to cryptographic misconfigurations by automating the selection of optimal defaults, such as algorithm types, key sizes, and security levels. This ensures robust, adaptable security configurations are applied efficiently, as demonstrated in use cases like the Qujata testbed, where CAM enhances client-server communication security using post-quantum cryptographic methods.
+
+The implementation of this repo currently enables users to create dashboards for monitoring the communication between a server and a client machine within the Qujata testbed. While CAM does not yet dynamically select the most suitable cryptographic configurations, it can loop through the available post-quantum, classical, and hybrid encryption algorithms provided by the Qujata framework. This allows users to visualize the performance and security impact of different algorithms in real-time. The integrated dashboards help users track system metrics, evaluate the effectiveness of each cryptographic approach, and better understand the operational environment, paving the way for future enhancements toward fully automated cryptographic agility.
+
 
 ## Recommended Setup
 
