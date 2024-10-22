@@ -54,7 +54,7 @@ You need to set up your initial username, password, organization name, the prima
 This setup can be done by launching the URL http://<serverIP>:8086/ in your browser. Once you have performed the initial setup, you can log in to the URL with the credentials created above.
 You should be greeted with the following dashboard:
 
-![InfluxDB 'Get started' screen](images/Screenshot 2024-10-22 125720.jpg)
+![InfluxDB 'Get started' screen](images/2.jpg)
 
 ***Create a new data Bucket (if necessary)***
 Initially during Influxdb configuration steps you’ve created a primary data bucket which may have no time limit for erasing old data (retention period). If such a limit is vital for your project’s
@@ -63,22 +63,22 @@ each of your physical machines.
 
 -- On the “welcome” page of the UI (URL http://<serverIP>:8086/ in your browser), click the “Buckets” option to navigate to the corresponding page as shown below:
 
-![Click 'Buckets' option](images/Screenshot 2024-10-22 125740.jpg)
+![Click 'Buckets' option](images/3.jpg)
 
 -- Click on the “+ CREATE BUCKET” button on the top right of the UI.
 
-!['CREATE BUCKET' button](images/Screenshot 2024-10-22 125800.jpg)
+!['CREATE BUCKET' button](images/4.jpg)
 
 -- Enter the name of your bucket and select the “OLDER THAN” option under the “Delete Data” label. Select the appropriate value for the deletion time limit of your data (e.g. 12 hours), then click “Create”
 
-!['Create Bucket' menu](images/Screenshot 2024-10-22 125818.jpg)
+<img src="images/5.jpg" width=50% height=50%>
 
 ***InfluxDB Access Token***
 The initial setup process creates a default token that has full read and write access to all the organizations in the database. You should save every token the moment you create one, as it is
 shown only once, when it is generated. You can not recover it after you close the “You’ve successfully created an API Token” window. For security purposes you can create a new token which will
 only connect to the organization and bucket you need to. If this is not the case you can save the default token (which provides full read/write access to your database), since it will be necessary for configuring telegraf later:
 
-![Token reveal screen](images/Screenshot 2024-10-22 125837.jpg)
+<img src="images/6.jpg" width=50% height=50%>
 
 The next steps should be applied in both Server and Client machines in order for your metrics to be sent to the Influx Database.
 
@@ -174,18 +174,18 @@ Before proceeding further, you need to verify if Telegraf stats are correctly co
 
 - Open the InfluxDB UI in your browser and click the third icon from the left sidebar and select the Buckets menu.
 
-![Select 'Buckets' option](images/Screenshot 2024-10-22 125907.jpg)
+![Select 'Buckets' option](images/7.jpg)
 
 - Click on your bucket name and you should be greeted with the following page.
 
-!['Data Explorer' menu](images/Screenshot 2024-10-22 125931.jpg)
+!['Data Explorer' menu](images/8.jpg)
 
 - Click on the bucket name and then click on one of the values in the _measurement filter, and
 keep clicking on other values as and when they appear.
 
 - Once you are done, click the Submit button. You should see a graph at the top. You might need to wait for some time for the data to appear.
 
-![Displayed metrics on InfluxDB Data Explorer](images/Screenshot 2024-10-22 125954.jpg)
+![Displayed metrics on InfluxDB Data Explorer](images/9.jpg)
 
 This should confirm that the data is being passed on correctly.
 
@@ -214,25 +214,26 @@ sudo docker run -d -p 3000:3000 --name=grafana --volume grafana-storage:/var/lib
 
 Launch the Grafana UI at http://<serverIP>:3000 in your browser and the following Grafana login page should greet you.
 
-![Grafana login screen](images/Screenshot 2024-10-22 130023.jpg)
+![Grafana login screen](images/10.jpg)
 
   1. Log in with the default credentials (admin / admin), and set a new default password.
   
   2. Click on the Add your first data source button. Follow the next steps and create a data source for both your physical machines.
 
-!['Add your first data source' option](images/Screenshot 2024-10-22 130048.jpg)
+!['Add your first data source' option](images/11.jpg)
 
   3. Choose “Connections → Data sources” on the side menu and click the “+ Add new data source” button.
 
-!['Data sources' option](images/Screenshot 2024-10-22 130114.jpg)
+![Query language option](images/12.jpg)
 
   4. Click the InfluxDB button.
 
-![Add data source screen](images/Screenshot 2024-10-22 130132.jpg)
+<img src="images/13.jpg" width=50% height=50%>
 
   5. On the next page, select “Flux” from the dropdown menu as the query language. Flux supports InfluxDB v2.x and is easier to set up and configure. Enter the following values:
 
-![Query language option](images/Screenshot 2024-10-22 130151.jpg)
+<img src="images/14.jpg" width=50% height=50%>
+
 
   6. Enter the following values (example image below):
 
@@ -260,12 +261,11 @@ Max series: 10000
 
 
 
-![Data source settings](images/Screenshot 2024-10-22 130228.jpg)
+![Data source settings](images/15.jpg)
 
   7. Click the "Save and Test" button to verify the setup. The next message should be displayed.
 
-![Save & test data source](images/Screenshot 2024-10-22 130252.jpg)
-
+<img src="images/16.jpg" width=50% height=50%>
 
 ### Step 5: Set up Grafana Dashboards
 
@@ -273,11 +273,11 @@ The next step is to set up Grafana Dashboard.
 
   1. Click on the sign with the four squares and select “Dashboards” to open the “Import” dashboard screen. Follow the next steps and create a dashboard for each of your physical machines.
 
-![Create new dashboard](images/Screenshot 2024-10-22 130311.jpg)
+![Create new dashboard](images/17.jpg)
 
   2. From the ‘Import dashboard” menu upload and import the dashboard.json file which contains the dedicated dashboard setup.
 
-![Import dashboard option](images/Screenshot 2024-10-22 130334.jpg)
+<img src="images/18.jpg" width=50% height=50%>
 
 ### Important Note
 In the metrics_dashboard.json file it is assumed that the username is “node-1”, the network interface is “enp86s0” and the name of the bucket is “metrics”. If otherwise please change
@@ -285,13 +285,13 @@ those values in the .json file with the ones that match your setup.
 
   3. In the “Dashboards” menu select the name of the imported dashboard.
 
-![Dashboards list](images/Screenshot 2024-10-22 130355.jpg)
+![Dashboards list](images/19.jpg)
 
 You may see that every panel displays “No data”. In that case commit the following changes in order to enable the “No data” panels:
 
 - Hover your mouse over a panel and click the right top button with the three vertical dots to expand the drop down menu and select “edit”
 
-![Dashboard drop down menu](images/Screenshot 2024-10-22 130415.jpg)
+![Dashboard drop down menu](images/20.jpg)
 
 - Make sure that in “Data source” field is selected the name of your bucket (in this case “metrics”), and in the flux language code you see the correct name of your bucket, username, network interface:
   
@@ -306,17 +306,17 @@ from(bucket: "metrics")
   |> yield(name: "mean")
 ```
 
-![Panel configuration](images/Screenshot 2024-10-22 130433.jpg)
+![Panel configuration](images/21.jpg)
 
 - Then click the “Query inspector” button and on the side menu that will appear click the “refresh” button. You should now see your metrics displayed. Exit the side menu and click “Apply” on the top right area.
 
-![Query inspector option](images/Screenshot 2024-10-22 130450.jpg)
+![Query inspector option](images/22.jpg)
 
 - Repeat the steps above to every panel that displays “no data”
 
 - Set the refresh rate to "300ms" to enable fast panel data updates.
 
-![Refreshing rate option](images/Screenshot 2024-10-22 130509.jpg)
+![Refreshing rate option](images/23.jpg)
 
 ### Step 6: Qujata Testbed Installation and Configuration
 
@@ -336,8 +336,8 @@ Navigate to the qujata/run/docker directory and start the server:
 sudo docker compose up
 ```
 
-![qujata docker compose up cli](images/Screenshot 2024-10-22 130526.jpg)
-![qujata docker cli 2](images/Screenshot 2024-10-22 130545.jpg)
+![qujata docker compose up cli](images/24.jpg)
+![qujata docker cli 2](images/25.jpg)
 
 **Set Up Qujata Client:**
 
@@ -350,7 +350,7 @@ npm install
 npm run start
 ```
 
-![qujata client npm run start cli](images/Screenshot 2024-10-22 130601.jpg)
+![qujata client npm run start cli](images/26.jpg)
 
 **Modify and Run Python Test Script:**
 
@@ -415,14 +415,14 @@ python3 performance_test.py
 ```
 Client terminal will log the name of the algorithm used and the total size of the message sent.
 
-![performance_test client logs cli](images/Screenshot 2024-10-22 130623.jpg)
+<img src="images/27.jpg" width=50% height=50%>
 
 Server terminal will log the following requests:
 
-![performance test server logs cli](images/Screenshot 2024-10-22 130653.jpg)
+![performance test server logs cli](images/28.jpg)
 
 Finally the dashboard of Server and client machines should display fluctuations of the different metrics as a result of the testing of Qujata testbed.
 
-![final dashboard](images/Screenshot 2024-10-22 130728.jpg)
+![final dashboard](images/29.jpg)
 
 
