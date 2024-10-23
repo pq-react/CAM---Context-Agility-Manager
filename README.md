@@ -207,7 +207,7 @@ sudo docker run -d -p 3000:3000 --name=grafana --volume grafana-storage:/var/lib
 
 Launch the Grafana UI at http://<serverIP>:3000 in your browser and the following Grafana login page should greet you.
 
-  1. Log in with the default credentials (admin / admin), and set a new default password.
+  1. Log in with the default credentials (admin / admin), and set new username and password.
 
 ![Grafana login screen](images/10.jpg)
   
@@ -277,7 +277,7 @@ The next step is to set up Grafana Dashboard.
 - In the provided .json file it is assumed that the username is `node-1`, the network interface is `enp86s0` and the name of the bucket is `metrics`. If otherwise please change
 those values in the entire .json file with the ones that match your setup.
 
-  3. In the `Dashboards` menu select the name of the imported dashboard.
+3. In the `Dashboards` menu select the name of the imported dashboard.
 
 ![Dashboards list](images/19.jpg)
 
@@ -400,7 +400,7 @@ the API requirements
 python3 performance_test.py
 ```
 
-### Test Server/Client communication with Qujata testbed
+### Step 7: Test Server/Client communication with Qujata testbed
 
 You can test Post-Quantum and Hybrid algorithms by executing python snippet
 
