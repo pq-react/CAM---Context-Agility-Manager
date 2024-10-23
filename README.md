@@ -80,8 +80,6 @@ only connect to the organization and bucket you need to. If this is not the case
 
 <img src="images/6.jpg" width=50% height=50%>
 
-The next steps should be applied in both Server and Client machines in order for your metrics to be sent to the Influx Database.
-
 ### Step 2: Install and Configure Telegraf on Both Server and Client Machines
 
 **Create a Directory:**
@@ -191,11 +189,6 @@ This should confirm that the data is being passed on correctly.
 
 ### Step 3: Install Grafana Using Docker
 
-**Create a Docker Volume:**
-
-```bash
-sudo docker volume create grafana-storage
-```
 **Run Grafana Docker Container:**
 According to the current implementation grafana instance is installed and configure in a separate virtual machine.
 
@@ -214,9 +207,9 @@ sudo docker run -d -p 3000:3000 --name=grafana --volume grafana-storage:/var/lib
 
 Launch the Grafana UI at http://<serverIP>:3000 in your browser and the following Grafana login page should greet you.
 
-![Grafana login screen](images/10.jpg)
-
   1. Log in with the default credentials (admin / admin), and set a new default password.
+
+![Grafana login screen](images/10.jpg)
   
   2. Click on the Add your first data source button. Follow the next steps and create a data source for both your physical machines.
 
@@ -263,7 +256,7 @@ Max series: 10000
 
 ![Data source settings](images/15.jpg)
 
-  7. Click the "Save and Test" button to verify the setup. The next message should be displayed.
+  7. Click the `Save and Test` button to verify the setup. The next message should be displayed.
 
 <img src="images/16.jpg" width=50% height=50%>
 
@@ -275,25 +268,26 @@ The next step is to set up Grafana Dashboard.
 
 ![Create new dashboard](images/17.jpg)
 
-  2. From the ‘Import dashboard” menu upload and import the dashboard.json file which contains the dedicated dashboard setup.
+  2. From the `Import dashboard` load the provided .json file which contains the dedicated dashboard setup.
 
 <img src="images/18.jpg" width=50% height=50%>
 
 ### Important Note
-In the metrics_dashboard.json file it is assumed that the username is “node-1”, the network interface is “enp86s0” and the name of the bucket is “metrics”. If otherwise please change
-those values in the .json file with the ones that match your setup.
+- If grafana doesn't let you upload .json file then you should copy and paste the content of `metrics_dashboard-1728313377372.json` file in the `Import  via dashboard JSON model` frame and then press load.
+- In the provided .json file it is assumed that the username is `node-1`, the network interface is `enp86s0` and the name of the bucket is `metrics`. If otherwise please change
+those values in the entire .json file with the ones that match your setup.
 
-  3. In the “Dashboards” menu select the name of the imported dashboard.
+  3. In the `Dashboards` menu select the name of the imported dashboard.
 
 ![Dashboards list](images/19.jpg)
 
 You may see that every panel displays “No data”. In that case commit the following changes in order to enable the “No data” panels:
 
-- Hover your mouse over a panel and click the right top button with the three vertical dots to expand the drop down menu and select “edit”
+- Hover your mouse over a panel and click the right top button with the three vertical dots to expand the drop down menu and select `edit`
 
 ![Dashboard drop down menu](images/20.jpg)
 
-- Make sure that in “Data source” field is selected the name of your bucket (in this case “metrics”), and in the flux language code you see the correct name of your bucket, username, network interface:
+- Make sure that in `Data source` field is selected the name of your bucket (in this case “metrics”), and in the flux language code you see the correct name of your bucket, username, network interface:
   
 ```plaintext
 from(bucket: "metrics")
@@ -314,7 +308,7 @@ from(bucket: "metrics")
 
 - Repeat the steps above to every panel that displays “no data”
 
-- Set the refresh rate to "300ms" to enable fast panel data updates.
+- Set the refresh rate to `300ms` to enable fast panel data updates.
 
 ![Refreshing rate option](images/23.jpg)
 
