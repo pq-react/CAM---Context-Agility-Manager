@@ -61,15 +61,15 @@ Initially during Influxdb configuration steps you’ve created a primary data bu
 requirements (which in our case is!), or you either need a new bucket then you should create a new one and configure it. It is recommended to create a separate bucket for storing metrics for
 each of your physical machines.
 
--- On the “welcome” page of the UI (URL http://<serverIP>:8086/ in your browser), click the “Buckets” option to navigate to the corresponding page as shown below:
+- On the “welcome” page of the UI (URL http://<serverIP>:8086/ in your browser), click the “Buckets” option to navigate to the corresponding page as shown below:
 
 ![Click 'Buckets' option](images/3.jpg)
 
--- Click on the “+ CREATE BUCKET” button on the top right of the UI.
+- Click on the “+ CREATE BUCKET” button on the top right of the UI.
 
 !['CREATE BUCKET' button](images/4.jpg)
 
--- Enter the name of your bucket and select the “OLDER THAN” option under the “Delete Data” label. Select the appropriate value for the deletion time limit of your data (e.g. 12 hours), then click “Create”
+- Enter the name of your bucket and select the “OLDER THAN” option under the “Delete Data” label. Select the appropriate value for the deletion time limit of your data (e.g. 12 hours), then click “Create”
 
 <img src="images/5.jpg" width=50% height=50%>
 
