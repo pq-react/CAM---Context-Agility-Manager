@@ -1,4 +1,4 @@
-#Locust Testing Tool for Portal Testing
+# Locust Testing Tool for Portal Testing
 
 
 Locust is a versatile load testing tool for simulating user behavior on web portals.
@@ -6,10 +6,10 @@ It allows you to test the performance and reliability of your system under vario
 by simulating multiple users accessing and interacting with the portal.
 With Locust, you can:
 
--Simulate user actions like logging in, accessing pages, and performing tasks.
--Monitor request performance, error rates, and system behavior.
+- Simulate user actions like logging in, accessing pages, and performing tasks.
+- Monitor request performance, error rates, and system behavior.
 
-##Steps to Install and Use Locust
+## Steps to Install and Use Locust
 
 1. Install Locust
 Ensure Python (3.7 or newer) is installed.
