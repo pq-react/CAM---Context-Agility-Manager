@@ -34,6 +34,6 @@ Verifies the seamless interaction between get_temperatures, get_power_consumptio
 ## Performance and Edge Cases:
 
 Tests the script's robustness and performance under stress:
--High-frequency iterations with rapid data retrieval and transmission.
--Handling large datasets for temperature and power metrics, ensuring no failures.
--Behavior when encountering an invalid InfluxDB URL, validating error handling.
+- High-frequency iterations with rapid data retrieval and transmission.
+- Handling large datasets for temperature and power metrics, ensuring no failures.
+- Behavior when encountering an invalid InfluxDB URL, validating error handling.
