@@ -20,12 +20,6 @@ jobs:
         with:
           python-version: "3.10"
 
-      - name: Install Dependencies
-        run: |
-          pip install -r requirements.txt
-          sudo apt update
-          sudo apt install -y lm-sensors  # Required for temperature readings
-
       - name: Run CAM Unit Tests
         run: |
           python -m unittest unittesting.py
