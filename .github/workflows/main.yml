@@ -20,12 +20,14 @@ jobs:
         with:
           python-version: "3.10"
 
-      - name: Change Directory to Unit Testing
-        run: cd "Unit Testing"
+      - name: Change to Unit Testing Directory
+        run: cd "Unit Testing" && ls -l  # Debugging step to verify files exist
 
       - name: Run CAM Unit Tests
-        run: python -m unittest "Unit Testing/unittesting.py"
-
+        run: |
+          cd "Unit Testing"
+          python -m unittest discover -s . -p "test_*.py"
+  
   portal-tests:
     name: Run Portal Load Tests
     runs-on: ubuntu-latest
@@ -38,8 +40,7 @@ jobs:
       - name: Install Locust
         run: pip install locust
 
-      - name: Change Directory to Portal Testing
-        run: cd "Portal Testing"
-
       - name: Run Locust Load Test
-        run: locust -f "Portal Testing/portal_testing.py" --headless -u 100 -r 5 --run-time 30s
+        run: |
+          cd "Portal Testing"
+          locust -f portal_testing.py --headless -u 100 -r 5 --run-time 30s
