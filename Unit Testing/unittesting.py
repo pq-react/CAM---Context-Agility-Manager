@@ -1,6 +1,6 @@
 import unittest
 
-def load_tests():
+def load_tests(loader, tests, pattern):
     # Create a test suite
     suite = unittest.TestSuite()
 
