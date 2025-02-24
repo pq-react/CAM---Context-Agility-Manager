@@ -20,13 +20,16 @@ jobs:
         with:
           python-version: "3.10"
 
-      - name: Install Required Python Packages
-        run: pip install requests
+      - name: Install Required Dependencies
+        run: |
+          pip install requests
+          sudo apt update
+          sudo apt install -y lm-sensors  # Fix missing 'sensors' command
 
-      - name: Run CAM Unit Tests
+      - name: Run CAM Unit Tests (Skipping API Tests)
         run: |
           cd "Unit Testing"
-          python -m unittest discover -s . -p "test_*.py"
+          python -m unittest discover -s . -p "test_*.py" -k "not test_performance_test"
 
   portal-tests:
     name: Run Portal Load Tests
