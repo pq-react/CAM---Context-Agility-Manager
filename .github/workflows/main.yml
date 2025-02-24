@@ -24,7 +24,7 @@ jobs:
         run: cd "Unit Testing"
 
       - name: Run CAM Unit Tests
-        run: python -m unittest discover -s "Unit Testing" -p "unittesting.py"
+        run: python -m unittest "Unit Testing/unittesting.py"
 
   portal-tests:
     name: Run Portal Load Tests
