@@ -20,14 +20,14 @@ jobs:
         with:
           python-version: "3.10"
 
-      - name: Change to Unit Testing Directory
-        run: cd "Unit Testing" && ls -l  # Debugging step to verify files exist
+      - name: Install Required Python Packages
+        run: pip install requests
 
       - name: Run CAM Unit Tests
         run: |
           cd "Unit Testing"
           python -m unittest discover -s . -p "test_*.py"
-  
+
   portal-tests:
     name: Run Portal Load Tests
     runs-on: ubuntu-latest
