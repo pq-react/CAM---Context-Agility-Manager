@@ -1,0 +1,18 @@
+[Unit]
+Description=CAM ↔ LLM chat interface (Flask, port 8082)
+After=network-online.target docker.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=localadmin
+WorkingDirectory=/home/localadmin/cam/pqreact_hooks
+EnvironmentFile=/home/localadmin/cam/pqreact_hooks/.env
+ExecStart=/home/localadmin/cam/pqreact_hooks/.venv/bin/python /home/localadmin/cam/pqreact_hooks/cam_chat_ui.py
+Restart=on-failure
+RestartSec=3
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
