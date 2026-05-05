@@ -95,22 +95,34 @@ def call_qujata_legacy_curl(alg: str, iterations: int, msg_size: int) -> dict[st
 
 
 def call_qujata_analyze(alg: str, slice_id: str, duration_s: int,
-                        bandwidth_kbps: int, msg_size: int) -> dict[str, Any]:
-    """POST to the iperf-shape `/qujata-api/analyze` endpoint. Returns
-    the create-suite response (must contain `test_suite_id`); the actual
-    metrics only land in qujata-mysql after the run completes
-    (≈ duration_s + 5–10 s).
+                        bandwidth_kbps: int, msg_size: int,
+                        connections: int = 1) -> dict[str, Any]:
+    """POST to `/qujata-api/analyze` with the **IPsec-shape** payload —
+    the exact one launch_qujata_experiment in mcp-server/patches/09 sends.
+    Verified live with suites #189–#197 (see TESTING.md §15.6).
 
-    The qujata-api request shape is the same one its portal /Run-experiment
-    button sends — see fix-qujata-portal-run-button.sh in the parent
-    KatanaSliceManagerv2 mcp-server/scripts/ tree."""
+    Required keys:
+      experimentName, description       — surface in `qujata-mysql.test_suites`
+      ipsecAlgorithms : list[str]       — singleton list, e.g. ["mlkem768"]
+      time            : list[int]       — duration in seconds, list with one elt
+      connections     : list[int]       — parallel iperf streams (1..8)
+      messageSizeIperf: list[int]       — payload size in bytes
+      bandwidth       : list[int]       — Kbps target
+      intervals       : list[int]       — iperf reporting interval (1 s)
+      sliceId         : str             — research | iot | video | mgmt
+
+    The TLS-shape payload (algorithms / iterationsCount) is rejected with
+    HTTP 400; that's the older portal flow and it's not what we want here."""
     payload = json.dumps({
-        "algorithms":     [alg],     # singleton list — qujata-api expects an array
-        "slice_id":       slice_id,
-        "duration":       int(duration_s),
-        "bandwidth":      int(bandwidth_kbps),
-        "messageSize":    int(msg_size),
-        "iterationsCount": 1,
+        "experimentName":   f"cam-{alg}-{slice_id}",
+        "description":      "Launched by CAM pqreact_hooks/mcp_hook.py --use-analyze",
+        "ipsecAlgorithms":  [alg],
+        "time":             [int(duration_s)],
+        "connections":      [int(connections)],
+        "messageSizeIperf": [int(msg_size)],
+        "bandwidth":        [int(bandwidth_kbps)],
+        "intervals":        [1],
+        "sliceId":          slice_id,
     }).encode()
     req = urllib.request.Request(
         env("QUJATA_BASE") + "/analyze",
@@ -453,6 +465,13 @@ def main(argv: list[str]) -> int:
 
     if args.synthetic:
         n = run_synthetic_sweep(args.algos, args.message_size)
+    elif args.use_analyze:
+        n = run_analyze_sweep(
+            args.algos, slice_id=args.slice_id,
+            duration_s=min(args.duration, 60),
+            bandwidth_kbps=min(args.bandwidth_kbps, 200000),
+            msg_size=args.message_size,
+        )
     else:
         n = run_legacy_sweep(args.algos, args.iterations, args.message_size, dry_run=args.dry_run)
     print(f"\nDone — {n} rows {'(dry-run, no DB writes)' if args.dry_run else 'inserted'}")

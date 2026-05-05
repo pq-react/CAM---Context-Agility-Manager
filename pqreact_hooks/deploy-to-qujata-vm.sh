@@ -101,6 +101,14 @@ QUJATA_BASE=http://10.160.101.247:3020/qujata-api
 QUJATA_LEGACY=http://10.160.101.67:3010/curl
 CHAT_URL=http://10.160.101.159:8081
 CAM_SOURCE_TAG=cam-context-agility
+
+# qujata-mysql is reachable from the .247 host on 127.0.0.1:3306
+# (the qujata-mysql container publishes its 3306 to the host).
+QUJATA_MYSQL_HOST=127.0.0.1
+QUJATA_MYSQL_PORT=3306
+QUJATA_MYSQL_USER=root
+QUJATA_MYSQL_PASSWORD=qujata
+QUJATA_MYSQL_DB=qujata
 EOF
 chmod 600 '$REMOTE_DIR/pqreact_hooks/.env'"
 printf "  ${GREEN}✓${NC} .env written (mode 600 — gitignored, password not echoed)\n"
