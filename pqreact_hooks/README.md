@@ -11,7 +11,8 @@ pqreact_hooks/
 ├── requirements.txt       ← pymysql
 ├── mcp_hook.py            ← Phase 1: sweep QUJATA + push rows to MCP MariaDB
 ├── chat_advisor.py        ← Phase 2: ask the LLM to recommend / rank
-└── cam_runner.py          ← orchestrator: sweep → recommend → re-sweep
+├── regulation_advisor.py  ← Phase 3: compliance gap / PQC timeline / migration priority
+└── cam_runner.py          ← orchestrator: sweep → recommend → re-sweep [+ regulatory readout]
 ```
 
 ---
@@ -54,15 +55,42 @@ python3 chat_advisor.py recommend --use-case iot-sensor   --security-floor 1 --e
 python3 chat_advisor.py rank      --metric energy_joules  --security-floor 3
 ```
 
+### `regulation_advisor.py` — regulatory advisor (Phase 3)
+
+Fires natural-language queries that route the chat agent to the
+[REGULATIONS] / [INVENTORY] tools added in Phase 1 of the recommendation
+engine. Three subcommands:
+
+- **`compliance --sector <s> [--algorithms a,b,c]`** — calls
+  `get_compliance_gap`. If `--algorithms` is omitted, auto-pulls the
+  latest CAM-tagged algorithm names from MCP MariaDB so the gap is
+  measured against what CAM actually deployed.
+- **`timeline --sector <s>`** — calls `get_pqc_timeline` for the
+  chronological deadline view.
+- **`prioritize --sector <s>`** — calls `recommend_migration_priority`,
+  the marquee single-tool synthesis (inventory ⨝ obligations ⨝ perf).
+
+**Run:**
+```bash
+python3 regulation_advisor.py compliance --sector telco
+python3 regulation_advisor.py compliance --sector health \
+        --algorithms ECDHE-secp256r1,ECDSA-P256,AES-128-GCM
+python3 regulation_advisor.py timeline   --sector energy
+python3 regulation_advisor.py prioritize --sector financial
+```
+
 ### `cam_runner.py` — agility loop (orchestrator)
 
-Closes the loop CAM was originally designed for:
+Closes the loop CAM was originally designed for, with an optional
+regulatory tail when `--sector` is set:
 
 ```
-[1/4] wide sweep  — every algorithm, 50 iterations each → MCP DB
-[2/4] recommend   — chat picks ONE algorithm given context
-[3/4] re-measure  — narrow sweep on just the chosen algorithm at 200 iters
-[4/4] verdict     — JSON line with chosen, rationale, deltas
+[1/n] wide sweep  — every algorithm, 50 iterations each → MCP DB
+[2/n] recommend   — chat picks ONE algorithm given context
+[3/n] re-measure  — narrow sweep on just the chosen algorithm at 200 iters
+[4/n] verdict     — JSON line with chosen, rationale, deltas
+[5/5] regulatory  — (only when --sector given) compliance gap +
+                    migration priority for that sector
 ```
 
 **Run:**
@@ -70,6 +98,7 @@ Closes the loop CAM was originally designed for:
 python3 cam_runner.py --use-case "banking"    --security-floor 5
 python3 cam_runner.py --use-case "iot-sensor" --security-floor 1 --energy-budget min
 python3 cam_runner.py --skip-wide --use-case "general"   # use existing rows
+python3 cam_runner.py --use-case "telco-NF"   --security-floor 3 --sector telco
 ```
 
 ---

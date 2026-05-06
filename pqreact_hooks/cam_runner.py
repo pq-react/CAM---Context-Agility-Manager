@@ -36,6 +36,7 @@ import sys
 
 import mcp_hook
 import chat_advisor
+import regulation_advisor
 
 
 def main(argv: list[str]) -> int:
@@ -51,14 +52,20 @@ def main(argv: list[str]) -> int:
                    help="skip step 1 (use existing CAM rows in MCP DB)")
     p.add_argument("--skip-narrow", action="store_true",
                    help="skip step 3 (just print the recommendation)")
+    p.add_argument("--sector",
+                   choices=regulation_advisor.VALID_SECTORS,
+                   help="if set, append a Phase-1 regulatory readout: "
+                        "compliance gap (vs CAM-tagged algorithms) + "
+                        "migration priority for the sector")
     args = p.parse_args(argv)
 
     # Step 1 — wide sweep
+    n_steps = 5 if args.sector else 4
     if args.skip_wide:
-        print("[1/4] wide-sweep skipped (--skip-wide)")
+        print(f"[1/{n_steps}] wide-sweep skipped (--skip-wide)")
         wide_n = 0
     else:
-        print(f"[1/4] wide-sweep over all CAM algorithms "
+        print(f"[1/{n_steps}] wide-sweep over all CAM algorithms "
               f"({args.wide_iterations} iters, msg={args.payload_size}B)")
         wide_n = mcp_hook.run_legacy_sweep(
             mcp_hook.ALGORITHMS_DEFAULT,
@@ -67,7 +74,7 @@ def main(argv: list[str]) -> int:
         print(f"      → {wide_n} rows written to MCP DB\n")
 
     # Step 2 — ask the LLM
-    print(f"[2/4] asking chat for a recommendation "
+    print(f"[2/{n_steps}] asking chat for a recommendation "
           f"(use_case='{args.use_case}', sec>={args.security_floor}, "
           f"energy={args.energy_budget})")
     rec = chat_advisor.recommend(args.use_case, args.security_floor,
@@ -82,17 +89,18 @@ def main(argv: list[str]) -> int:
 
     # Step 3 — narrow sweep
     if args.skip_narrow:
-        print("[3/4] narrow-sweep skipped (--skip-narrow)")
+        print(f"[3/{n_steps}] narrow-sweep skipped (--skip-narrow)")
         narrow_n = 0
     else:
-        print(f"[3/4] re-measuring {chosen} at {args.narrow_iterations} iterations")
+        print(f"[3/{n_steps}] re-measuring {chosen} at {args.narrow_iterations} iterations")
         narrow_n = mcp_hook.run_legacy_sweep(
             [chosen], args.narrow_iterations, args.payload_size,
         )
         print(f"      → {narrow_n} rows written to MCP DB\n")
 
     # Step 4 — verdict
-    print(f"[4/4] verdict")
+    n_steps = 5 if args.sector else 4
+    print(f"[4/{n_steps}] verdict")
     print(json.dumps({
         "chosen":         chosen,
         "rationale":      rec["rationale"],
@@ -103,6 +111,22 @@ def main(argv: list[str]) -> int:
         "wide_rows":      wide_n,
         "narrow_rows":    narrow_n,
     }, indent=2))
+
+    # Step 5 — optional regulatory readout (Phase-1 recommendation engine)
+    if args.sector:
+        print(f"\n[5/5] regulatory readout for sector='{args.sector}'")
+        print("\n— compliance gap (vs CAM-tagged algorithms in MCP DB):")
+        try:
+            cg = regulation_advisor.cmd_compliance(args.sector, [])
+            print(cg.get("response", "(no response)"))
+        except Exception as e:
+            print(f"  ⚠ compliance check failed: {e}")
+        print("\n— migration priority:")
+        try:
+            mp = regulation_advisor.cmd_prioritize(args.sector)
+            print(mp.get("response", "(no response)"))
+        except Exception as e:
+            print(f"  ⚠ migration priority failed: {e}")
     return 0
 
 
