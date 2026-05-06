@@ -35,10 +35,10 @@ import urllib.error
 import urllib.request
 from typing import Any
 
-# ── Defaults: PQ-REACT testbed at .247 / .67 / .69 ───────────────────────
+# ── Defaults: deployment-specific endpoints come from .env (no IP defaults) ─
 DEFAULTS = {
     # MCP MariaDB (the PQ-REACT MCP server's backing DB)
-    "MCP_DB_HOST":     "10.160.101.247",
+    "MCP_DB_HOST":     "",                    # required — set in .env
     "MCP_DB_PORT":     "3307",
     "MCP_DB_USER":     "root",
     "MCP_DB_PASSWORD": "",                    # supply via .env, never inline
@@ -46,8 +46,8 @@ DEFAULTS = {
     # QUJATA orchestrator. Newer testbeds use /qujata-api/analyze (port 3020,
     # iperf-shape payload); older CAM/Qujata setups use /curl (port 3010,
     # algorithm+iterations+messageSize payload).
-    "QUJATA_BASE":     "http://10.160.101.247:3020/qujata-api",
-    "QUJATA_LEGACY":   "http://11.11.11.11:3010/curl",
+    "QUJATA_BASE":     "",                    # e.g. http://<host>:3020/qujata-api
+    "QUJATA_LEGACY":   "",                    # e.g. http://<host>:3010/curl
     # Tag — keeps CAM rows distinguishable from the QUJATA-live ETL hook,
     # demo4/5 imports, and upstream sample data.
     "CAM_SOURCE_TAG":  "cam-context-agility",

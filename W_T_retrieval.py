@@ -1,14 +1,20 @@
+import os
 import requests
 import time
 import subprocess
 import re
 import glob
 
-# InfluxDB configuration
-influxdb_url = "http://11.11.11.11:8086/api/v2/write" # IP where DB lives
-org = "pqreact"
-bucket = "metrics" # a bucket to send metrics
-token = "influxdb****token"
+# InfluxDB configuration — set CAM_INFLUXDB_URL / CAM_INFLUXDB_TOKEN env
+# vars before running (e.g. CAM_INFLUXDB_URL=http://<host>:8086/api/v2/write).
+influxdb_url = os.environ.get('CAM_INFLUXDB_URL', '')
+if not influxdb_url:
+    raise SystemExit("CAM_INFLUXDB_URL env var required (e.g. http://<host>:8086/api/v2/write)")
+org = os.environ.get('CAM_INFLUXDB_ORG', 'pqreact')
+bucket = os.environ.get('CAM_INFLUXDB_BUCKET', 'metrics')
+token = os.environ.get('CAM_INFLUXDB_TOKEN', '')
+if not token:
+    raise SystemExit("CAM_INFLUXDB_TOKEN env var required")
 
 # Function to get current temperatures using the sensors command
 def get_temperatures():
