@@ -1,3 +1,4 @@
+import os
 import requests
 import json
 import time
@@ -26,8 +27,11 @@ algorithms = [
     "x25519_kyber768"
 ]
 
-# API endpoint
-url = 'http://11.11.11.11:3010/curl' # enter Server IP here
+# API endpoint — set CAM_QUJATA_URL env var (e.g.
+# http://<your-qujata-host>:3010/curl) before running.
+url = os.environ.get('CAM_QUJATA_URL', '').rstrip('/')
+if not url:
+    raise SystemExit("CAM_QUJATA_URL env var required (e.g. http://<host>:3010/curl)")
 
 # Headers
 headers = {

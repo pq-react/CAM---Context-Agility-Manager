@@ -1,6 +1,6 @@
 # CAM ⇄ PQ-REACT MCP hooks
 
-Three small Python scripts that bridge the **Context Agility Manager (CAM)** to the **PQ-REACT MCP server** (MariaDB on `10.160.101.247:3307`) and the **LLM chat pipeline** (`http://10.160.101.159:8081`) running in the *KatanaSliceManagerv2* testbed.
+Three small Python scripts that bridge the **Context Agility Manager (CAM)** to the **PQ-REACT MCP server** (MariaDB on `<mcp-host>:3307`) and the **LLM chat pipeline** (`http://<chat-host>:8081`) deployed alongside the *KatanaSliceManagerv2* testbed. All hosts/ports come from `.env` — there are no hardcoded testbed addresses.
 
 CAM is upstream-pristine — these hooks live in their own subdirectory (`pqreact_hooks/`) and don't touch any existing CAM file.
 
@@ -87,13 +87,13 @@ python3 cam_runner.py --skip-wide --use-case "general"   # use existing rows
             │  pqreact_hooks/mcp_hook.py  ───────── push CAM rows ──┐
             │                                                       ↓
 ┌───────────────────────────────────────────────────────────────────┐
-│  PQ-REACT MCP server (10.160.101.247)                             │
+│  PQ-REACT MCP server  (host: $MCP_DB_HOST)                        │
 │   pqreact-mcp-mariadb (PQREACT.performance_test, 255+ rows)       │
-│   pqreact-mcp-server  (FastMCP SSE :5040, 13 tools)               │
+│   pqreact-mcp-server  (FastMCP SSE :5040, 19 tools)               │
 └────────────────────────────────────────┬──────────────────────────┘
                                          │ SSE
 ┌────────────────────────────────────────┴──────────────────────────┐
-│  Chat UI (10.160.101.159:8081)                                    │
+│  Chat UI  (host: $CHAT_URL)                                       │
 │   FastAPI + Ollama (llama3.1:8b on NVIDIA L4)                     │
 │   pqreact_hooks/chat_advisor.py ──► /chat ◄── any browser tab     │
 └───────────────────────────────────────────────────────────────────┘
@@ -113,19 +113,19 @@ All connection details come from environment variables — never hardcoded.
 
 | Var | Default | Used by | What |
 |-----|---------|---------|------|
-| `MCP_DB_HOST` | `10.160.101.247` | `mcp_hook` | MCP MariaDB host |
+| `MCP_DB_HOST` | *(required)* | `mcp_hook` | MCP MariaDB host |
 | `MCP_DB_PORT` | `3307` | `mcp_hook` | MCP MariaDB port |
 | `MCP_DB_USER` | `root` | `mcp_hook` | MCP MariaDB user |
 | `MCP_DB_PASSWORD` | *(required)* | `mcp_hook` | the long random password from `pqreact-mcp-mariadb` env |
 | `MCP_DB_NAME` | `PQREACT` | `mcp_hook` | database name |
-| `QUJATA_BASE` | `http://10.160.101.247:3020/qujata-api` | (reserved) | newer iperf-shape API |
-| `QUJATA_LEGACY` | `http://10.160.101.67:3010/curl` | `mcp_hook` | the older curl endpoint CAM was built around |
-| `CHAT_URL` | `http://10.160.101.159:8081` | `chat_advisor`, `cam_runner` | chat UI base URL |
+| `QUJATA_BASE` | *(required if used)* | (reserved) | newer iperf-shape API base URL |
+| `QUJATA_LEGACY` | *(optional)* | `mcp_hook` | older curl-shape endpoint URL |
+| `CHAT_URL` | *(required)* | `chat_advisor`, `cam_runner` | chat UI base URL |
 | `CAM_SOURCE_TAG` | `cam-context-agility` | all three | `source` column tag for CAM rows |
 
 To find the MariaDB password on your testbed:
 ```bash
-ssh localadmin@10.160.101.247 \
+ssh <user>@<mcp-host> \
   "docker inspect pqreact-mcp-mariadb --format '{{range .Config.Env}}{{.}}{{\"\\n\"}}{{end}}' | grep ROOT"
 ```
 
@@ -136,7 +136,7 @@ ssh localadmin@10.160.101.247 \
 After `python3 mcp_hook.py` finishes, you should see CAM rows appear in MCP MariaDB:
 
 ```bash
-ssh localadmin@10.160.101.247 \
+ssh <user>@<mcp-host> \
   "docker exec pqreact-mcp-mariadb mysql -uroot -p'<PASSWORD>' -D PQREACT -e \
    \"SELECT source, COUNT(*) FROM performance_test GROUP BY source\""
 ```

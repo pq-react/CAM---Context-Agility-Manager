@@ -20,7 +20,7 @@ DB with fresh CAM measurements. Together they close the agility loop:
 sweep → store → ask LLM → re-sweep just the recommended algorithm.
 
 Connection:
-  CHAT_URL = http://10.160.101.159:8081  (default)
+  CHAT_URL — set in .env (e.g. http://<chat-ui-host>:8081)
 """
 from __future__ import annotations
 
@@ -33,7 +33,7 @@ import urllib.error
 import urllib.request
 
 DEFAULTS = {
-    "CHAT_URL":         "http://10.160.101.159:8081",
+    "CHAT_URL":         "",   # required — set in .env
     "CAM_SOURCE_TAG":   "cam-context-agility",
 }
 

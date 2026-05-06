@@ -113,7 +113,7 @@ interval = "1s"
 **InfluxDB Configuration:**
 ```ini
 [[outputs.influxdb_v2]]
-urls = ["http://11.11.11.11:8086"]
+urls = ["http://<your-influxdb-host>:8086"]
 token = "$INFLUX_TOKEN"
 organization = "pqreact"
 bucket = "metrics_1"
@@ -149,14 +149,13 @@ The python snippet provided enables recovering power consumption and CPU tempera
 ```bash
 nano W_T_retrieval.py
 ```
-- Find the section below in W_T_retrieval.py and assign the correct values:
+- Set the InfluxDB connection details via env vars before running W_T_retrieval.py:
 
-```python
-# InfluxDB configuration
-influxdb_url = "http://11.11.11.11:8086/api/v2/write"
-org = "pqreact"
-bucket = "metrics"
-token = "influxdb****token"
+```bash
+export CAM_INFLUXDB_URL="http://<your-influxdb-host>:8086/api/v2/write"
+export CAM_INFLUXDB_ORG="pqreact"
+export CAM_INFLUXDB_BUCKET="metrics"
+export CAM_INFLUXDB_TOKEN="<your-influxdb-token>"
 ```
 - save the file by pressing Ctrl + X and entering Y when prompted
 
@@ -381,8 +380,8 @@ algorithms = [
 "secp384r1",
 "x25519_kyber768"
 ]
-# API endpoint
-url = 'http://11.11.11.11:3010/curl'
+# API endpoint — supply via env var: CAM_QUJATA_URL=http://<host>:3010/curl
+url = os.environ['CAM_QUJATA_URL']
 ```
 You can also change the number of iterations and the size of the encrypted message that will be sent to the server if you edit the following lines of the snippet (“interationsCount”:500 and “messageSize”:1000 are the default values) Run the script to test the post-quantum and hybrid algorithms:
 
