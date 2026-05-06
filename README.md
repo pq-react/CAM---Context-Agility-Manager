@@ -419,4 +419,29 @@ Finally the dashboard of Server and client machines should display fluctuations 
 
 ![final dashboard](images/29.jpg)
 
+---
+
+## Optional: PQ-REACT MCP bridge (`pqreact_hooks/`)
+
+CAM is **standalone-by-default**: the steps above run end-to-end against just InfluxDB + Grafana + a Qujata testbed, with no other services required.
+
+The `pqreact_hooks/` subdirectory adds an **optional bridge** to the wider PQ-REACT testbed (the patched `core-ncsrd/PQ-REACT_MCP-Server` MCP server + LLM chat UI, deployed by `KatanaSliceManagerv2`):
+
+- **`mcp_hook.py`** — sweeps Qujata, then UPSERTs one row per algorithm into the PQ-REACT MariaDB tagged `source='cam-context-agility'`. CAM measurements appear next to other PQ-REACT data sources in the same table.
+- **`chat_advisor.py`** — POSTs natural-language questions ("recommend an algorithm for IoT", "rank by energy at L3") to the LLM chat at `http://<gpu-vm>:8081`. The agent runs SQL against `performance_test WHERE source='cam-context-agility'` and returns `ALG=<name>` plus a one-sentence rationale.
+- **`cam_runner.py`** — agility loop: wide sweep → store → LLM recommend → narrow re-sweep.
+
+Everything in `pqreact_hooks/` is opt-in. You can ignore the directory entirely if you don't have a PQ-REACT MCP deployment to point at. To enable it:
+
+```bash
+cd pqreact_hooks
+cp .env.example .env
+# edit .env: set MCP_DB_PASSWORD and any IPs that differ from defaults
+pip install -r requirements.txt
+set -a; . ./.env; set +a
+python3 mcp_hook.py
+```
+
+See `pqreact_hooks/README.md` for the full bridge documentation.
+
 
