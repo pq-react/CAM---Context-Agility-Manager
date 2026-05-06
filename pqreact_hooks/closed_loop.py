@@ -168,14 +168,48 @@ def apply_configuration(sector: str, algorithm: str, target_type: str,
     )
     resp = chat(q)
     text = resp.get("response", "") or ""
+    tool_calls = resp.get("tool_calls", [])
     audit_match = re.search(r"audit\s*#(\d+)", text)
     suite_match = re.search(r"qujata_suite_id[^0-9]*(\d+)", text) or \
                   re.search(r"test\s*suite\s*#?(\d+)", text, re.IGNORECASE)
+    audit_id = int(audit_match.group(1)) if audit_match else None
+    suite_id = int(suite_match.group(1)) if suite_match else None
+
+    # Fallback: model paraphrased the tool response and didn't echo "audit #N".
+    # Ask the chat to run a deterministic SELECT against pqc_configurations
+    # for the row this orchestrator just inserted. We filter on requested_by
+    # plus (sector, algorithm, target_type) so we won't pick up a sibling
+    # closed_loop run racing alongside us.
+    if audit_id is None and any(
+        tc.get("name") == "apply_pqc_configuration" for tc in tool_calls
+    ):
+        sql = (
+            "SELECT id, qujata_suite_id FROM pqc_configurations "
+            f"WHERE requested_by = 'closed_loop' "
+            f"  AND sector = '{sector}' "
+            f"  AND algorithm = '{algorithm}' "
+            f"  AND target_type = '{target_type}' "
+            "ORDER BY id DESC LIMIT 1"
+        )
+        lookup_q = (
+            f"Run execute_query with this exact SQL and forward the row "
+            f"verbatim, no prose:\n```sql\n{sql}\n```"
+        )
+        lookup = chat(lookup_q)
+        ltext = lookup.get("response", "") or ""
+        # Match the first integer in the row — schema is (id, qujata_suite_id).
+        nums = re.findall(r"\b(\d+)\b", ltext)
+        if nums:
+            audit_id = int(nums[0])
+            if suite_id is None and len(nums) >= 2:
+                # qujata_suite_id is the second integer in the row when present.
+                suite_id = int(nums[1])
+
     return {
-        "audit_id":   int(audit_match.group(1)) if audit_match else None,
-        "suite_id":   int(suite_match.group(1)) if suite_match else None,
+        "audit_id":   audit_id,
+        "suite_id":   suite_id,
         "response":   text,
-        "tool_calls": resp.get("tool_calls", []),
+        "tool_calls": tool_calls,
     }
 
 
