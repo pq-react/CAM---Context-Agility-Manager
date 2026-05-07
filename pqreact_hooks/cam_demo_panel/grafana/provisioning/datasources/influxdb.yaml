@@ -1,0 +1,22 @@
+# Datasource provisioning — points at CAM's existing InfluxDB.
+#
+# The panel and Telegraf write into the same bucket; the dashboards read
+# host metrics (Telegraf) and per-handshake samples
+# (cam_demo_handshake measurement) from a single Flux datasource.
+#
+# Override at deploy time with INFLUX_URL / _ORG / _BUCKET / _TOKEN.
+apiVersion: 1
+datasources:
+  - name: CAM-InfluxDB
+    type: influxdb
+    uid:  cam-influxdb
+    access: proxy
+    url:    ${INFLUX_URL}
+    isDefault: true
+    jsonData:
+      version: Flux
+      organization: ${INFLUX_ORG}
+      defaultBucket: ${INFLUX_BUCKET}
+      tlsSkipVerify: true
+    secureJsonData:
+      token: ${INFLUX_TOKEN}

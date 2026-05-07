@@ -1,0 +1,139 @@
+{
+  "title": "nginx Server (CAM PQC demo)",
+  "uid":   "cam-demo-server",
+  "tags":  ["pqreact", "cam", "pqc-demo", "server"],
+  "schemaVersion": 39,
+  "version": 1,
+  "refresh": "10s",
+  "time":   { "from": "now-5m", "to": "now" },
+  "timepicker": { "refresh_intervals": ["5s","10s","30s","1m","5m"] },
+  "templating": { "list": [] },
+  "panels": [
+    {
+      "id": 1, "type": "stat", "title": "Active handshakes / sec (last 1m)",
+      "gridPos": { "h": 4, "w": 6, "x": 0, "y": 0 },
+      "datasource": { "type": "influxdb", "uid": "cam-influxdb" },
+      "fieldConfig": { "defaults": { "unit": "ops", "color": { "mode": "thresholds" } } },
+      "options": { "colorMode": "background", "graphMode": "area" },
+      "targets": [{
+        "refId": "A",
+        "query": "from(bucket: \"NUC_metrics\")\n  |> range(start: -1m)\n  |> filter(fn: (r) => r._measurement == \"cam_demo_handshake\")\n  |> aggregateWindow(every: 5s, fn: count, createEmpty: false)\n  |> mean()"
+      }]
+    },
+    {
+      "id": 2, "type": "stat", "title": "Total bytes served (5m)",
+      "gridPos": { "h": 4, "w": 6, "x": 6, "y": 0 },
+      "datasource": { "type": "influxdb", "uid": "cam-influxdb" },
+      "fieldConfig": { "defaults": { "unit": "bytes" } },
+      "targets": [{
+        "refId": "A",
+        "query": "from(bucket: \"NUC_metrics\")\n  |> range(start: -5m)\n  |> filter(fn: (r) => r._measurement == \"net\" and r._field == \"bytes_sent\")\n  |> derivative(unit: 1s, nonNegative: true)\n  |> sum()"
+      }]
+    },
+    {
+      "id": 3, "type": "stat", "title": "Top algorithm (5m)",
+      "gridPos": { "h": 4, "w": 6, "x": 12, "y": 0 },
+      "datasource": { "type": "influxdb", "uid": "cam-influxdb" },
+      "fieldConfig": { "defaults": { "color": { "mode": "thresholds" } } },
+      "options": { "graphMode": "none", "textMode": "value_and_name" },
+      "targets": [{
+        "refId": "A",
+        "query": "from(bucket: \"NUC_metrics\")\n  |> range(start: -5m)\n  |> filter(fn: (r) => r._measurement == \"cam_demo_handshake\")\n  |> group(columns: [\"algorithm\"])\n  |> count()\n  |> top(n: 1)"
+      }]
+    },
+    {
+      "id": 4, "type": "gauge", "title": "System consumption (W)",
+      "gridPos": { "h": 4, "w": 6, "x": 18, "y": 0 },
+      "datasource": { "type": "influxdb", "uid": "cam-influxdb" },
+      "fieldConfig": { "defaults": { "unit": "watt", "min": 0, "max": 200,
+        "thresholds": { "mode": "absolute", "steps": [
+          { "color": "green", "value": null },
+          { "color": "yellow", "value": 80 },
+          { "color": "red", "value": 150 } ] } } },
+      "targets": [{
+        "refId": "A",
+        "query": "from(bucket: \"NUC_metrics\")\n  |> range(start: -1m)\n  |> filter(fn: (r) => r._measurement == \"powerstat\" and r._field == \"system_w\")\n  |> last()"
+      }]
+    },
+    {
+      "id": 10, "type": "timeseries", "title": "Bandwidth (egress, B/s)",
+      "gridPos": { "h": 7, "w": 24, "x": 0, "y": 4 },
+      "datasource": { "type": "influxdb", "uid": "cam-influxdb" },
+      "fieldConfig": { "defaults": { "unit": "Bps", "custom": { "fillOpacity": 30, "lineInterpolation": "smooth" } } },
+      "targets": [{
+        "refId": "A",
+        "query": "from(bucket: \"NUC_metrics\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"net\" and r._field == \"bytes_sent\")\n  |> derivative(unit: 1s, nonNegative: true)"
+      }]
+    },
+    {
+      "id": 11, "type": "timeseries", "title": "Power consumption (W)",
+      "gridPos": { "h": 7, "w": 12, "x": 0, "y": 11 },
+      "datasource": { "type": "influxdb", "uid": "cam-influxdb" },
+      "fieldConfig": { "defaults": { "unit": "watt", "custom": { "fillOpacity": 20 } } },
+      "targets": [
+        { "refId": "A", "query": "from(bucket: \"NUC_metrics\") |> range(start: v.timeRangeStart, stop: v.timeRangeStop) |> filter(fn: (r) => r._measurement == \"powerstat\" and (r._field == \"system_w\" or r._field == \"cores_w\" or r._field == \"package_w\"))" }
+      ]
+    },
+    {
+      "id": 12, "type": "timeseries", "title": "CPU % load",
+      "gridPos": { "h": 7, "w": 12, "x": 12, "y": 11 },
+      "datasource": { "type": "influxdb", "uid": "cam-influxdb" },
+      "fieldConfig": { "defaults": { "unit": "percent", "min": 0, "max": 100 } },
+      "targets": [{
+        "refId": "A",
+        "query": "from(bucket: \"NUC_metrics\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"cpu\" and r._field == \"usage_user\" and r.cpu == \"cpu-total\")"
+      }]
+    },
+    {
+      "id": 13, "type": "timeseries", "title": "CPU / ACPI / PCH temperatures",
+      "gridPos": { "h": 7, "w": 12, "x": 0, "y": 18 },
+      "datasource": { "type": "influxdb", "uid": "cam-influxdb" },
+      "fieldConfig": { "defaults": { "unit": "celsius" } },
+      "targets": [{
+        "refId": "A",
+        "query": "from(bucket: \"NUC_metrics\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"temp\" and r._field == \"temp\")"
+      }]
+    },
+    {
+      "id": 14, "type": "timeseries", "title": "CPU frequency",
+      "gridPos": { "h": 7, "w": 12, "x": 12, "y": 18 },
+      "datasource": { "type": "influxdb", "uid": "cam-influxdb" },
+      "fieldConfig": { "defaults": { "unit": "hertz" } },
+      "targets": [{
+        "refId": "A",
+        "query": "from(bucket: \"NUC_metrics\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"cpufreq\" and r._field == \"current\")"
+      }]
+    },
+    {
+      "id": 15, "type": "timeseries", "title": "Memory used",
+      "gridPos": { "h": 6, "w": 24, "x": 0, "y": 25 },
+      "datasource": { "type": "influxdb", "uid": "cam-influxdb" },
+      "fieldConfig": { "defaults": { "unit": "bytes", "custom": { "fillOpacity": 30 } } },
+      "targets": [{
+        "refId": "A",
+        "query": "from(bucket: \"NUC_metrics\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"mem\" and r._field == \"used\")"
+      }]
+    },
+    {
+      "id": 20, "type": "barchart", "title": "Handshakes by algorithm (5m)",
+      "gridPos": { "h": 7, "w": 12, "x": 0, "y": 31 },
+      "datasource": { "type": "influxdb", "uid": "cam-influxdb" },
+      "fieldConfig": { "defaults": { "unit": "short" } },
+      "options": { "orientation": "horizontal", "xTickLabelRotation": -30 },
+      "targets": [{
+        "refId": "A",
+        "query": "from(bucket: \"NUC_metrics\")\n  |> range(start: -5m)\n  |> filter(fn: (r) => r._measurement == \"cam_demo_handshake\")\n  |> group(columns: [\"algorithm\"])\n  |> count()"
+      }]
+    },
+    {
+      "id": 21, "type": "timeseries", "title": "appconnect_ms by algorithm",
+      "gridPos": { "h": 7, "w": 12, "x": 12, "y": 31 },
+      "datasource": { "type": "influxdb", "uid": "cam-influxdb" },
+      "fieldConfig": { "defaults": { "unit": "ms" } },
+      "targets": [{
+        "refId": "A",
+        "query": "from(bucket: \"NUC_metrics\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"cam_demo_handshake\" and r._field == \"appconnect_ms\")\n  |> aggregateWindow(every: 5s, fn: mean, createEmpty: false)"
+      }]
+    }
+  ]
+}
