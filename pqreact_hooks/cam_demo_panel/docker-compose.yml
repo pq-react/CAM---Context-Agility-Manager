@@ -1,0 +1,142 @@
+# CAM-local PQC handshake demo (single-page panel + 2 containers + Grafana).
+#
+# Standalone backup of the original two-VM QUJATA demo: nginx (PQC TLS server)
+# and curl (PQC TLS client) run as two containers on the SAME VM as CAM. The
+# control panel (a FastAPI service) drives the curl container via `docker exec`
+# and streams its output to a single-page UI that also embeds the two Grafana
+# dashboards (server-side + client-side metrics) as iframes.
+#
+# Bring up:
+#   docker compose -f pqreact_hooks/cam_demo_panel/docker-compose.yml up -d
+#
+# Open:
+#   http://<cam-host>:8083/        ← the unified panel
+#
+# All containers share `cam-demo-net`, an internal Docker network. The panel
+# also joins the host bridge so it can reach Telegraf via /var/run/telegraf.sock
+# (optional — for emitting per-handshake KEM-time metrics into CAM's existing
+# InfluxDB). The Grafana dashboards read from the same InfluxDB.
+
+name: cam-demo
+
+networks:
+  cam-demo-net:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.30.0.0/24
+
+services:
+
+  # ── PQC TLS server (nginx + OQS-OpenSSL) ────────────────────────────────
+  pqc-nginx:
+    build: ./nginx
+    image: pqreact/cam-pqc-nginx:1.0.0
+    container_name: pqreact-cam-pqc-nginx
+    networks:
+      cam-demo-net:
+        ipv4_address: 172.30.0.10
+    ports:
+      - "4433:4433"
+    restart: unless-stopped
+    healthcheck:
+      # bash + openssl ship in the OQS image; this just checks the listener.
+      test: ["CMD", "bash", "-lc", "echo | openssl s_client -connect 127.0.0.1:4433 -servername localhost 2>/dev/null | head -c 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 4
+
+  # ── PQC TLS client (curl + OQS-OpenSSL); long-lived — driven via docker exec ──
+  pqc-curl:
+    build: ./curl
+    image: pqreact/cam-pqc-curl:1.0.0
+    container_name: pqreact-cam-pqc-curl
+    networks:
+      cam-demo-net:
+        ipv4_address: 172.30.0.20
+    depends_on:
+      pqc-nginx:
+        condition: service_healthy
+    # `sleep infinity` keeps the container alive so the panel can `docker exec`
+    # curl commands into it on demand. No long-running process inside.
+    command: ["sleep", "infinity"]
+    restart: unless-stopped
+
+  # ── Single-page control panel (FastAPI + Jinja + SSE) ──────────────────
+  panel:
+    build: ./panel
+    image: pqreact/cam-demo-panel:1.0.0
+    container_name: pqreact-cam-demo-panel
+    networks:
+      - cam-demo-net
+    ports:
+      - "8083:8083"
+    environment:
+      # Where the panel does docker exec for curl runs — overridable so this
+      # works on any docker host.
+      - CURL_CONTAINER=pqreact-cam-pqc-curl
+      - NGINX_HOST=172.30.0.10
+      - NGINX_PORT=4433
+      # Grafana origin used in iframe URLs. Set to a public hostname when
+      # serving the panel externally; defaults to the local Grafana below.
+      - GRAFANA_BASE=http://${CAM_PUBLIC_HOST:-localhost}:3001
+      # Dashboard UIDs (must match grafana/dashboards/*.json `uid:` field).
+      - GRAFANA_DASH_SERVER=cam-demo-server
+      - GRAFANA_DASH_CLIENT=cam-demo-client
+      - GRAFANA_DEFAULT_RANGE=now-5m
+      # InfluxDB ingestion knobs — panel writes per-handshake KEM-time samples
+      # so the dashboard plots them. Leave INFLUX_URL blank to disable.
+      - INFLUX_URL=${INFLUX_URL:-http://host.docker.internal:8086}
+      - INFLUX_ORG=${INFLUX_ORG:-pqreact}
+      - INFLUX_BUCKET=${INFLUX_BUCKET:-NUC_metrics}
+      - INFLUX_TOKEN=${INFLUX_TOKEN:-}
+      # When set, enable the "Run on QUJATA" mode that fans out to the
+      # remote QUJATA stack instead of the local containers (kept off by
+      # default — this stack is the LOCAL backup).
+      - QUJATA_API_BASE=${QUJATA_API_BASE:-}
+    volumes:
+      # Mount the docker socket so the panel can `docker exec` the curl
+      # container. This is the cleanest path; the alternative (a TCP shim
+      # inside the curl container) doesn't exist in upstream openquantumsafe/curl.
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    extra_hosts:
+      # Lets the panel reach CAM's InfluxDB (running on the host network on
+      # `<cam-host>:8086`) when the panel is in a bridge network.
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      pqc-curl:
+        condition: service_started
+    restart: unless-stopped
+
+  # ── Local Grafana — pre-provisioned with the two dashboards ────────────
+  grafana:
+    image: grafana/grafana-oss:11.2.0
+    container_name: pqreact-cam-grafana
+    networks:
+      - cam-demo-net
+    ports:
+      - "3001:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD:-pqreact-cam-demo}
+      - GF_USERS_ALLOW_SIGN_UP=false
+      # Allow the panel to embed the dashboards in <iframe>s. Without these
+      # two settings the iframes are blocked.
+      - GF_SECURITY_ALLOW_EMBEDDING=true
+      - GF_AUTH_ANONYMOUS_ENABLED=true
+      - GF_AUTH_ANONYMOUS_ORG_ROLE=Viewer
+      - GF_AUTH_ANONYMOUS_ORG_NAME=Main Org.
+      # Surface the InfluxDB token to the provisioning datasource at runtime.
+      - INFLUX_URL=${INFLUX_URL:-http://host.docker.internal:8086}
+      - INFLUX_ORG=${INFLUX_ORG:-pqreact}
+      - INFLUX_BUCKET=${INFLUX_BUCKET:-NUC_metrics}
+      - INFLUX_TOKEN=${INFLUX_TOKEN:-}
+    volumes:
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
+      - cam-grafana-data:/var/lib/grafana
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    restart: unless-stopped
+
+volumes:
+  cam-grafana-data:

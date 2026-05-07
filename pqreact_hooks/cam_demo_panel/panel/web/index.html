@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>CAM PQC handshake demo</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="/static/panel.css">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">
+    <span class="logo">⟁</span>
+    <span class="title">CAM PQC Handshake Demo</span>
+    <span class="subtitle">single-page · 2 local containers · 2 Grafana panels</span>
+  </div>
+  <div class="topbar-meta">
+    <span>nginx target: <code>{{ nginx_target }}</code></span>
+    <span>curl container: <code>{{ curl_container }}</code></span>
+    <a class="external" href="{{ grafana_base }}" target="_blank" rel="noopener">Grafana ↗</a>
+  </div>
+</header>
+
+<main class="grid">
+
+  <!-- ── LEFT: control + log ─────────────────────────────────────────── -->
+  <section class="left">
+
+    <div class="card">
+      <h2>Run a handshake sweep</h2>
+      <form id="run-form">
+        <label>
+          Algorithm
+          <select name="algorithm" id="algo" required></select>
+        </label>
+        <label>
+          Iterations
+          <input type="number" name="iterations" id="iterations"
+                 min="1" max="10000" value="100" required>
+        </label>
+        <label>
+          Payload (bytes)
+          <input type="number" name="payload_bytes" id="payload"
+                 min="0" max="10485760" value="1200" required>
+        </label>
+        <div class="actions">
+          <button type="submit" id="start-btn">Run</button>
+          <button type="button" id="stop-btn" disabled>Stop</button>
+          <button type="button" id="quick-btn" title="Run the 4 default algorithms back-to-back">Quick sweep</button>
+        </div>
+      </form>
+      <p class="hint">
+        <code>POST /api/runs</code> kicks off a curl loop inside
+        <code>{{ curl_container }}</code> against
+        <code>{{ nginx_target }}</code>. Each handshake is timed;
+        per-handshake samples appear below in real time.
+      </p>
+    </div>
+
+    <div class="card">
+      <h2>Latest run status</h2>
+      <div id="status-line" class="status-line">no run yet</div>
+      <div id="summary" class="summary"></div>
+    </div>
+
+    <div class="card flex-1">
+      <h2>
+        Live algorithm log
+        <button id="clear-log" class="ghost">clear</button>
+      </h2>
+      <pre id="log" class="log"></pre>
+    </div>
+
+  </section>
+
+  <!-- ── RIGHT: two Grafana iframes (server + client) ────────────────── -->
+  <section class="right">
+
+    <div class="iframe-wrap">
+      <div class="iframe-head">
+        <span class="dot dot-srv"></span>
+        <span>nginx Server (host metrics + handshake counts)</span>
+        <a href="{{ iframe_server }}" target="_blank" rel="noopener">open ↗</a>
+        <button class="ghost" data-refresh="server">refresh</button>
+      </div>
+      <iframe id="iframe-server" src="{{ iframe_server }}"
+              loading="lazy" referrerpolicy="no-referrer"></iframe>
+    </div>
+
+    <div class="iframe-wrap">
+      <div class="iframe-head">
+        <span class="dot dot-cli"></span>
+        <span>Curl Client (host metrics + handshake timing)</span>
+        <a href="{{ iframe_client }}" target="_blank" rel="noopener">open ↗</a>
+        <button class="ghost" data-refresh="client">refresh</button>
+      </div>
+      <iframe id="iframe-client" src="{{ iframe_client }}"
+              loading="lazy" referrerpolicy="no-referrer"></iframe>
+    </div>
+
+  </section>
+
+</main>
+
+<script src="/static/panel.js"></script>
+</body>
+</html>
