@@ -205,17 +205,10 @@ async def index():
 
 @app.get("/favicon.ico")
 async def favicon():
-<<<<<<< HEAD
     """Serve the PQ-REACT favicon. Browsers asking for /favicon.ico get
     the same PNG as the <link rel='icon'> in index.html — modern browsers
     accept PNG content for the .ico path."""
     png = WEB_DIR / "img" / "pqreact-favicon.png"
     if png.exists():
         return FileResponse(str(png), media_type="image/png")
-=======
-    p = WEB_DIR / "favicon.ico"
-    if p.exists():
-        return FileResponse(str(p))
-    # 1×1 transparent png as a graceful no-favicon fallback.
->>>>>>> 89d81f7ba9ec6272c6a1ee0f13386dd4fe84dbab
     return JSONResponse({"ok": True}, status_code=204)

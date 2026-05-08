@@ -139,13 +139,10 @@ services:
     volumes:
       - ./grafana/provisioning:/etc/grafana/provisioning:ro
       - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
-<<<<<<< HEAD
       # Share the panel's logo assets with Grafana so the dashboards can
       # embed `public/img/cam-demo/pqreact-logo-horizontal.png` via their
       # text panels — single copy, no duplication, host-portable.
       - ./panel/web/img:/usr/share/grafana/public/img/cam-demo:ro
-=======
->>>>>>> 89d81f7ba9ec6272c6a1ee0f13386dd4fe84dbab
       - cam-grafana-data:/var/lib/grafana
     extra_hosts:
       - "host.docker.internal:host-gateway"
