@@ -6,14 +6,21 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="icon" type="image/png" href="/static/img/pqreact-favicon.png">
   <link rel="apple-touch-icon" href="/static/img/pqreact-favicon.png">
-  <link rel="stylesheet" href="/static/panel.css">
+  <!-- Cache-busted CSS link — bumped each time panel.css changes
+       structurally, so browsers don't render an old class set against
+       a new HTML structure. -->
+  <link rel="stylesheet" href="/static/panel.css?v=20260508-logo">
 </head>
 <body>
 
 <header class="topbar">
   <div class="brand">
     <a class="brand-link" href="https://www.pqreact.eu/" target="_blank" rel="noopener" title="PQ-REACT — Post-Quantum Cryptography Real-time Enabling Adoption Compliance Toolkit">
-      <img class="brand-logo" src="/static/img/pqreact-logo-horizontal.png" alt="PQ-REACT">
+      <!-- Inline height as a defence against cached CSS that might lack
+           the .brand-logo rule. The logo's native size is 1024×439, so
+           without a height cap the topbar takes 400+ px of vertical space. -->
+      <img class="brand-logo" src="/static/img/pqreact-logo-horizontal.png"
+           alt="PQ-REACT" style="height:48px;width:auto;display:block;">
     </a>
     <div class="brand-text">
       <span class="title">CAM · PQC Handshake Demo</span>

@@ -37,8 +37,9 @@ body {
 /* PQ-REACT horizontal logo (1024×439). Cap height to keep the topbar
    compact; aspect-ratio is preserved so the wordmark stays legible. */
 .brand-logo {
-  height: 40px;
+  height: 48px;          /* bumped from 40 — reads cleaner at this aspect */
   width: auto;
+  max-width: 220px;       /* hard-stop for ultra-narrow viewports        */
   display: block;
   /* The logo has a transparent background; on the dark panel it shows
      up just fine. No filter needed — the project mark is multi-colour. */
