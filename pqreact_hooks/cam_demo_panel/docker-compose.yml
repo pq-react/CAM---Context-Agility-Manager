@@ -40,11 +40,14 @@ services:
       - "4433:4433"
     restart: unless-stopped
     healthcheck:
-      # bash + openssl ship in the OQS image; this just checks the listener.
-      test: ["CMD", "bash", "-lc", "echo | openssl s_client -connect 127.0.0.1:4433 -servername localhost 2>/dev/null | head -c 1"]
+      # CMD-SHELL → /bin/sh (the OQS image is sh-only, no bash). openssl
+      # is on PATH thanks to the OQS install. The listener answer is one
+      # byte ("S" from "SSL handshake has read 0 bytes…") which is enough.
+      test: ["CMD-SHELL", "echo Q | openssl s_client -connect 127.0.0.1:4433 -servername localhost 2>/dev/null | head -c 1"]
       interval: 15s
       timeout: 5s
-      retries: 4
+      retries: 6
+      start_period: 10s
 
   # ── PQC TLS client (curl + OQS-OpenSSL); long-lived — driven via docker exec ──
   pqc-curl:
@@ -56,7 +59,10 @@ services:
         ipv4_address: 172.30.0.20
     depends_on:
       pqc-nginx:
-        condition: service_healthy
+        # Use service_started instead of service_healthy — nginx comes up
+        # in <1 s, the healthcheck only adds value as a status indicator,
+        # not as a startup gate.
+        condition: service_started
     # `sleep infinity` keeps the container alive so the panel can `docker exec`
     # curl commands into it on demand. No long-running process inside.
     command: ["sleep", "infinity"]

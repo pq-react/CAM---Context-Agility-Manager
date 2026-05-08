@@ -4,11 +4,20 @@
 # into the curl container and streams the output to the browser.
 FROM python:3.12-slim
 
-# docker CLI (we mount /var/run/docker.sock from the host; this binary is
-# what actually issues the `docker exec` calls).
+# docker CLI — we mount /var/run/docker.sock from the host; this binary
+# is what actually issues the `docker exec` calls into the curl container.
+#
+# We install it from Docker's own static-binary release rather than
+# Debian's `docker.io` package (the slim variant ships only docker-init,
+# not the CLI). One static binary, no daemon, ~70 MB.
 RUN apt-get update \
- && apt-get install -y --no-install-recommends docker.io ca-certificates \
- && rm -rf /var/lib/apt/lists/*
+ && apt-get install -y --no-install-recommends curl ca-certificates \
+ && curl -fsSL https://download.docker.com/linux/static/stable/$(uname -m)/docker-27.1.1.tgz \
+      | tar -xzC /tmp \
+ && mv /tmp/docker/docker /usr/local/bin/docker \
+ && chmod +x /usr/local/bin/docker \
+ && rm -rf /tmp/docker /var/lib/apt/lists/* \
+ && docker --version
 
 WORKDIR /app
 COPY requirements.txt .
