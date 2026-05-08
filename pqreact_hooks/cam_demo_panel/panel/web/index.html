@@ -2,17 +2,23 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <title>CAM PQC handshake demo</title>
+  <title>PQ-REACT · CAM PQC handshake demo</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="icon" type="image/png" href="/static/img/pqreact-favicon.png">
+  <link rel="apple-touch-icon" href="/static/img/pqreact-favicon.png">
   <link rel="stylesheet" href="/static/panel.css">
 </head>
 <body>
 
 <header class="topbar">
   <div class="brand">
-    <span class="logo">⟁</span>
-    <span class="title">CAM PQC Handshake Demo</span>
-    <span class="subtitle">single-page · 2 local containers · 2 Grafana panels</span>
+    <a class="brand-link" href="https://www.pqreact.eu/" target="_blank" rel="noopener" title="PQ-REACT — Post-Quantum Cryptography Real-time Enabling Adoption Compliance Toolkit">
+      <img class="brand-logo" src="/static/img/pqreact-logo-horizontal.png" alt="PQ-REACT">
+    </a>
+    <div class="brand-text">
+      <span class="title">CAM · PQC Handshake Demo</span>
+      <span class="subtitle">single-page · 2 local containers · 2 Grafana panels</span>
+    </div>
   </div>
   <div class="topbar-meta">
     <span>nginx target: <code>{{ nginx_target }}</code></span>
