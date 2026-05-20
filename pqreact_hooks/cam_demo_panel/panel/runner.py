@@ -199,6 +199,14 @@ async def _drive_run(run: RunState) -> None:
             run.status = "done"
             await _publish(run, f"=== run {run.run_id} done · "
                                 f"{len(run.samples)} handshakes ===")
+            # Persist one summary row per (algorithm, payload_bytes) to the
+            # PQ-REACT MariaDB so the chat's `source='cam-context-agility'`
+            # query sees the new data. Before this hook the panel only
+            # wrote per-handshake samples to InfluxDB (Grafana path) and
+            # never reached MariaDB — discovered 2026-05 when a BIKE-L1
+            # panel sweep with 100/100 OK didn't surface in the chat's
+            # "Compare CAM measurements to campaign-b-qujata-live" reply.
+            await _maybe_emit_mariadb(run)
     except Exception as e:
         run.status = "failed"
         run.error = repr(e)
@@ -288,6 +296,115 @@ async def _maybe_emit_influx(sample: HandshakeSample, run: RunState) -> None:
         # Don't let InfluxDB hiccups break the panel — host metrics from
         # Telegraf will still flow.
         pass
+
+
+# ── PQ-REACT MariaDB write (end-of-run summary row) ──────────────────────
+#
+# Optional — fires only when MARIADB_HOST + MARIADB_PASSWORD are set
+# (the same gate pattern as _maybe_emit_influx). Inserts one row into
+# PQREACT.performance_test with the run's p50 handshake time as
+# `duration`, tagged source='cam-context-agility' so the chat's
+# regulation/performance specialists can compare it against
+# campaign-b-qujata, upstream, etc.
+#
+# Connects via pymysql lazily — no global pool, the panel does ≤ one
+# write per completed run so the per-write connect overhead doesn't
+# matter. Silent best-effort: connection failures must NEVER mark a
+# successful handshake run as failed.
+
+_MARIADB_KEEP_ALIVE_S = 60.0  # noqa: F841 — reserved for future pool
+_NIST_BY_ID: dict = {}        # filled on first call
+
+def _nist_level_for(algo_id: str) -> int | None:
+    """Look up the algorithm's NIST PQC security level (1, 3, 5) so the
+    performance_test row carries it. Falls back to None for purely
+    classical entries (prime256v1 / secp384r1 have no NIST PQC level)."""
+    global _NIST_BY_ID
+    if not _NIST_BY_ID:
+        try:
+            from panel.algorithms import BY_ID
+            _NIST_BY_ID = {a_id: a.nist_l for a_id, a in BY_ID.items()}
+        except Exception:
+            _NIST_BY_ID = {}
+    return _NIST_BY_ID.get(algo_id)
+
+
+async def _maybe_emit_mariadb(run: RunState) -> None:
+    """Insert one row into PQREACT.performance_test for the completed run.
+    No-op when MARIADB_HOST / MARIADB_PASSWORD are unset (laptops, dev).
+    """
+    host = os.getenv("MARIADB_HOST", "")
+    pwd  = os.getenv("MARIADB_PASSWORD", "")
+    if not (host and pwd):
+        await _publish(run,
+            "(MariaDB not configured — set MARIADB_HOST and "
+            "MARIADB_PASSWORD on the panel container to mirror summary "
+            "rows into PQREACT.performance_test.)")
+        return
+    if not run.samples:
+        await _publish(run, "(no samples — skipping MariaDB insert)")
+        return
+
+    s = summarise(run.samples)
+    # `duration` in performance_test is seconds (QUJATA convention).
+    # We use total_ms_p50 → seconds; appconnect would be more PQC-pure
+    # but the existing rows from QUJATA use total time so we match.
+    duration_s = s.get("total_ms_p50", 0.0) / 1000.0
+
+    port = int(os.getenv("MARIADB_PORT", "3307"))
+    user = os.getenv("MARIADB_USER", "pqreact")
+    db   = os.getenv("MARIADB_NAME", "PQREACT")
+    tag  = os.getenv("CAM_SOURCE_TAG", "cam-context-agility")
+    sec  = _nist_level_for(run.spec.algorithm)
+
+    def _do_upsert():
+        import pymysql
+        conn = pymysql.connect(
+            host=host, port=port, user=user, password=pwd, database=db,
+            connect_timeout=5, read_timeout=5, write_timeout=5,
+        )
+        try:
+            with conn.cursor() as cur:
+                # ON DUPLICATE KEY UPDATE because the table has a UNIQUE
+                # constraint on (algorithm_name, message_size, size_kind,
+                # source) — without this, the second run for the same
+                # tuple hits IntegrityError 1062 and the new measurement
+                # is lost. The pre-existing CAM rows often have NULL
+                # duration from a prior pipeline that didn't measure; the
+                # UPSERT path overwrites those NULLs with real values.
+                cur.execute(
+                    "INSERT INTO performance_test "
+                    "(algorithm_name, message_size, duration, "
+                    " security_level, source, size_kind) "
+                    "VALUES (%s, %s, %s, %s, %s, %s) "
+                    "ON DUPLICATE KEY UPDATE "
+                    " duration       = VALUES(duration), "
+                    " security_level = COALESCE(security_level, VALUES(security_level))",
+                    (run.spec.algorithm, run.spec.payload_bytes,
+                     duration_s, sec, tag, "payload"),
+                )
+                rows = cur.rowcount  # 1 = inserted, 2 = updated, 0 = no change
+            conn.commit()
+            return rows
+        finally:
+            conn.close()
+
+    try:
+        rows = await asyncio.to_thread(_do_upsert)
+        action = {1: "inserted", 2: "updated"}.get(rows, "no-op")
+        msg = (f"=== MariaDB: row {action} "
+               f"(algorithm={run.spec.algorithm}, "
+               f"message_size={run.spec.payload_bytes}, "
+               f"duration={duration_s:.4f}s, source={tag}) ===")
+        # print() so docker logs sees it; _publish() so SSE clients see it.
+        print(f"[runner.mariadb] {msg}", flush=True)
+        await _publish(run, msg)
+    except Exception as e:
+        # Don't break a successful sweep over a DB write hiccup. The
+        # operator's data is still in InfluxDB + memory.
+        msg = f"(MariaDB write skipped: {type(e).__name__}: {e})"
+        print(f"[runner.mariadb] {msg}", flush=True)
+        await _publish(run, msg)
 
 
 # ── summary stats over the samples (for the public_dict roll-up) ─────────

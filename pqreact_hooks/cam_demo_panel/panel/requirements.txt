@@ -4,3 +4,8 @@ jinja2==3.1.4
 sse-starlette==2.1.3
 httpx==0.27.2
 pydantic==2.9.2
+# MariaDB driver — used by runner._maybe_emit_mariadb() to write one
+# summary row per completed handshake sweep into PQREACT.performance_test
+# so the chat queries see the CAM data. Pinned to the latest stable
+# pure-Python release (no C build deps).
+pymysql==1.1.1

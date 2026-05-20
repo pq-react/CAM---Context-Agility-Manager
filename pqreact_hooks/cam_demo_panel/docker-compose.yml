@@ -100,6 +100,17 @@ services:
       # remote QUJATA stack instead of the local containers (kept off by
       # default — this stack is the LOCAL backup).
       - QUJATA_API_BASE=${QUJATA_API_BASE:-}
+      # PQ-REACT MariaDB — when set, the panel writes one row per
+      # completed handshake sweep into PQREACT.performance_test
+      # (source='cam-context-agility'). Required for the chat's
+      # 'Compare CAM measurements to campaign-b-qujata-live' query to
+      # see the panel's data. Leave MARIADB_HOST blank to disable.
+      - MARIADB_HOST=${MARIADB_HOST:-}
+      - MARIADB_PORT=${MARIADB_PORT:-3307}
+      - MARIADB_USER=${MARIADB_USER:-pqreact}
+      - MARIADB_PASSWORD=${MARIADB_PASSWORD:-}
+      - MARIADB_NAME=${MARIADB_NAME:-PQREACT}
+      - CAM_SOURCE_TAG=${CAM_SOURCE_TAG:-cam-context-agility}
     volumes:
       # Mount the docker socket so the panel can `docker exec` the curl
       # container. This is the cleanest path; the alternative (a TCP shim
