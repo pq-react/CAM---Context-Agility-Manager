@@ -3,28 +3,43 @@ import requests
 import json
 import time
 
-# List of algorithms
+# List of algorithms.
+#
+# Updated 2026-05 to match what the current openquantumsafe/openssl-3
+# + oqs-provider build actually exposes as TLS group names. The
+# original list used pre-FIPS-203 names (kyber*, hqc*, x25519_kyber768
+# etc.) which the new oqs-provider releases dropped — every handshake
+# for those names came back with curl exit 59 ("failed setting
+# curves list: '<name>'") or TLS handshake_failure (exit 35). The
+# canonical names below are confirmed by `openssl list -kem-algorithms`
+# on the live demo host.
+#
+# Coverage: classical baselines + ML-KEM family + ML-KEM hybrids +
+# FrodoKEM family + BIKE family. HQC is intentionally absent because
+# the current oqs-provider doesn't ship it.
 algorithms = [
-    "bikel1",
-    "bikel3",
-    "bikel5",
-    "frodo1344aes",
-    "frodo1344shake",
+    # Classical baselines
+    "prime256v1",
+    "secp384r1",
+    # ML-KEM (NIST FIPS 203 — formerly Kyber)
+    "mlkem512",
+    "mlkem768",
+    "mlkem1024",
+    # ML-KEM hybrids
+    "p256_mlkem512",
+    "p384_mlkem768",
+    "X25519MLKEM768",
+    # FrodoKEM family
     "frodo640aes",
     "frodo640shake",
     "frodo976aes",
     "frodo976shake",
-    "hqc128",
-    "hqc192",
-    "hqc256",
-    "kyber1024",
-    "kyber512",
-    "kyber768",
-    "p256_kyber512",
-    "p384_kyber768",
-    "prime256v1",
-    "secp384r1",
-    "x25519_kyber768"
+    "frodo1344aes",
+    "frodo1344shake",
+    # BIKE family
+    "bikel1",
+    "bikel3",
+    "bikel5",
 ]
 
 # API endpoint — set CAM_QUJATA_URL env var (e.g.

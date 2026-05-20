@@ -38,10 +38,14 @@ ALGORITHMS: list[Algorithm] = [
     Algorithm("p384_mlkem768",   "hybrid", "P-384 + ML-KEM-768",   3),
     Algorithm("X25519MLKEM768",  "hybrid", "X25519 + ML-KEM-768",  3),
 
-    # ── Kyber (pre-FIPS naming, still common in tooling) ──────────────────
-    Algorithm("kyber512",   "kyber", "Kyber-512",  1),
-    Algorithm("kyber768",   "kyber", "Kyber-768",  3),
-    Algorithm("kyber1024",  "kyber", "Kyber-1024", 5),
+    # ── Kyber (pre-FIPS naming) ──────────────────────────────────────────
+    # Intentionally removed. The current openquantumsafe/openssl-3 +
+    # oqs-provider build (verified 2026-05 on the CAM demo host) NO
+    # LONGER exposes `kyber*` or `x25519_kyber768` as TLS group names
+    # — the names were dropped when NIST published FIPS 203 and the
+    # corresponding ML-KEM identifiers became canonical. Use the
+    # mlkem512 / mlkem768 / mlkem1024 entries above instead.
+    # `openssl list -kem-algorithms` confirms only mlkem* exists.
 
     # ── FrodoKEM (lattice with conservative assumptions) ──────────────────
     Algorithm("frodo640aes",    "frodo", "Frodo-640 AES",     1),
@@ -60,7 +64,7 @@ ALGORITHMS: list[Algorithm] = [
 BY_ID: dict[str, Algorithm] = {a.id: a for a in ALGORITHMS}
 
 # Convenient defaults for the QA-shaped quick-runs.
-DEFAULT_ALGOS_QUICK   = ["mlkem768", "p256_mlkem512", "kyber768", "prime256v1"]
+DEFAULT_ALGOS_QUICK   = ["mlkem768", "p256_mlkem512", "X25519MLKEM768", "prime256v1"]
 DEFAULT_ALGOS_FULL    = [a.id for a in ALGORITHMS]
 DEFAULT_ITERATIONS    = 100
 DEFAULT_PAYLOAD_BYTES = 1200      # matches the QA battery's 1200-byte size
