@@ -44,9 +44,12 @@ algorithms = [
 
 # API endpoint — set CAM_QUJATA_URL env var (e.g.
 # http://<your-qujata-host>:3010/curl) before running.
+#
+# Read at module level (so unit tests can reference `performance_test.url`
+# and patch `performance_test.requests.post`) but DO NOT raise at import.
+# CI imports this module to exercise the algorithm matrix with mocked
+# HTTP; raising here would prevent any test from even loading.
 url = os.environ.get('CAM_QUJATA_URL', '').rstrip('/')
-if not url:
-    raise SystemExit("CAM_QUJATA_URL env var required (e.g. http://<host>:3010/curl)")
 
 # Headers
 headers = {
@@ -60,19 +63,31 @@ data = {
     "messageSize": 1000  # You can change this value based on the API requirements
 }
 
-# Loop through each algorithm and make the request
-for algorithm in algorithms:
-    data["algorithm"] = algorithm
-    response = requests.post(url, headers=headers, data=json.dumps(data))
 
-    # Check the response
-    if response.status_code == 201:
-        print(f"Successfully processed algorithm: {algorithm}")
-        print(response.json())
-    else:
-        print(f"Failed to process algorithm: {algorithm}")
-        print(f"Status Code: {response.status_code}")
-        print(f"Response: {response.text}")
+def run():
+    """Drive the algorithm matrix against the configured QUJATA endpoint."""
+    if not url:
+        raise SystemExit(
+            "CAM_QUJATA_URL env var required (e.g. http://<host>:3010/curl)"
+        )
 
-    # Sleep for 10 seconds
-    time.sleep(5)
+    for algorithm in algorithms:
+        data["algorithm"] = algorithm
+        response = requests.post(url, headers=headers, data=json.dumps(data))
+
+        # Check the response
+        if response.status_code == 201:
+            print(f"Successfully processed algorithm: {algorithm}")
+            print(response.json())
+        else:
+            print(f"Failed to process algorithm: {algorithm}")
+            print(f"Status Code: {response.status_code}")
+            print(f"Response: {response.text}")
+
+        # Sleep between iterations
+        time.sleep(5)
+
+
+# Guarded so `import performance_test` is side-effect free.
+if __name__ == "__main__":
+    run()

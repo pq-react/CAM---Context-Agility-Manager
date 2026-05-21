@@ -7,14 +7,27 @@ import glob
 
 # InfluxDB configuration — set CAM_INFLUXDB_URL / CAM_INFLUXDB_TOKEN env
 # vars before running (e.g. CAM_INFLUXDB_URL=http://<host>:8086/api/v2/write).
+#
+# Module-level reads only — do NOT raise at import time, otherwise unit
+# tests (which import this module to mock its internals) can't even
+# load. Runtime callers (send_to_influxdb / __main__) validate via
+# _require_config() below.
 influxdb_url = os.environ.get('CAM_INFLUXDB_URL', '')
-if not influxdb_url:
-    raise SystemExit("CAM_INFLUXDB_URL env var required (e.g. http://<host>:8086/api/v2/write)")
 org = os.environ.get('CAM_INFLUXDB_ORG', 'pqreact')
 bucket = os.environ.get('CAM_INFLUXDB_BUCKET', 'metrics')
 token = os.environ.get('CAM_INFLUXDB_TOKEN', '')
-if not token:
-    raise SystemExit("CAM_INFLUXDB_TOKEN env var required")
+
+
+def _require_config():
+    """Validate env config at call time (not import time)."""
+    missing = [
+        name for name, val in (
+            ('CAM_INFLUXDB_URL', influxdb_url),
+            ('CAM_INFLUXDB_TOKEN', token),
+        ) if not val
+    ]
+    if missing:
+        raise SystemExit(f"required env var(s) not set: {', '.join(missing)}")
 
 # Function to get current temperatures using the sensors command
 def get_temperatures():
@@ -96,6 +109,7 @@ def send_to_influxdb(temps, power):
 
 # Main loop to retrieve and send metrics every second
 if __name__ == "__main__":
+    _require_config()
     while True:
         temperatures = get_temperatures()
         power = get_power_consumption(interval=1)

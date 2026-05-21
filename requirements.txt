@@ -1,0 +1,6 @@
+# CAM runtime + test dependencies.
+# Pin to compatible major-version ranges; CI installs from this file.
+requests>=2.31,<3
+# Locust is only needed by the portal-tests CI job (smoke check of the
+# locustfile) and by anyone running the actual load test locally.
+locust>=2.20,<3

@@ -67,8 +67,14 @@ while True:
         mock_temp.assert_called()
         mock_power.assert_called()
 
+    # Match the mock pattern used by the two tests above — without it
+    # this test shells out to the real `sensors` binary, which may be
+    # missing or slow on the CI runner.
+    @patch('W_T_retrieval.get_temperatures', return_value={})
+    @patch('W_T_retrieval.get_power_consumption', return_value={})
+    @patch('W_T_retrieval.send_to_influxdb')
     @patch('time.sleep', side_effect=KeyboardInterrupt)  # Simulate exiting the loop
-    def test_keyboard_interrupt_handling(self, mock_sleep):
+    def test_keyboard_interrupt_handling(self, mock_sleep, mock_send, mock_power, mock_temp):
         with self.assertRaises(KeyboardInterrupt):  # Expect loop to terminate with KeyboardInterrupt
             exec(
                 """
