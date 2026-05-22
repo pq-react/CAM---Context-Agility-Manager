@@ -1,9 +1,9 @@
-# Ensure consistent line endings for Markdown files
+# Ensure consistent line endings for Markdown files.
+# This glob already covers every .md in the repo (including those under
+# "Unit Testing/" and "Portal Testing/"), so no per-file rules are
+# needed. The previous per-file entries pointed at a non-existent cam/
+# tree and an unquoted path with a space, which git rejected with
+# "not a valid attribute name" on every command.
 *.md text eol=lf
-
-# Specific handling for three .md files
-cam/README.md text eol=lf
-cam/Unit Testing/W_T_retrieval Unit_testing.md text eol=lf
-performance_testing.md text eol=lf
 
 # Add any additional configurations if necessary
