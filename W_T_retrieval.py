@@ -107,10 +107,17 @@ def send_to_influxdb(temps, power):
     if response.status_code != 204:
         print(f"Failed to write data to InfluxDB: {response.status_code} - {response.text}")
 
-# Main loop to retrieve and send metrics every second
-if __name__ == "__main__":
-    _require_config()
-    while True:
+# Main loop to retrieve and send metrics.
+#
+# Extracted into a function with a bounded-iteration option so it can be
+# unit-tested deterministically. With iterations=None (the default) it
+# runs forever, exactly as the original script did. Tests pass a finite
+# `iterations` and mock the collectors — no need to raise KeyboardInterrupt
+# as a control-flow hack to break the loop (which used to leak out of the
+# test process and exit it with code 130).
+def main_loop(iterations=None, interval=0.5):
+    count = 0
+    while iterations is None or count < iterations:
         temperatures = get_temperatures()
         power = get_power_consumption(interval=1)
 
@@ -123,4 +130,10 @@ if __name__ == "__main__":
         else:
             print("Failed to retrieve temperatures or power consumption.")
 
-        time.sleep(0.5)
+        time.sleep(interval)
+        count += 1
+
+
+if __name__ == "__main__":
+    _require_config()
+    main_loop()
