@@ -36,6 +36,19 @@ body {
   color: var(--text);
 }
 
+/* PQ-REACT logo watermark — large, faint, centred behind the panels. */
+body::before {
+  content: "";
+  position: fixed; left: 0; right: 0; top: 0; bottom: 0;
+  background: url('/static/img/pqreact-logo-horizontal.png') no-repeat center 44%;
+  background-size: min(560px, 54vw) auto;
+  opacity: 0.07;
+  z-index: 0;
+  pointer-events: none;
+}
+/* keep the real UI above the watermark */
+.topbar, .grid, main, .iframe-wrap { position: relative; z-index: 1; }
+
 /* 2 — Top bar / brand → mono uppercase, hairline. */
 .topbar { border-bottom: 1px solid #b7bfc9 !important; background: #ffffff !important; }
 .brand .title { font-family: 'JetBrains Mono', monospace; text-transform: uppercase; letter-spacing: 0.12em; color: #0c1219; }
