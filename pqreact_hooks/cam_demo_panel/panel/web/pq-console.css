@@ -1,0 +1,98 @@
+/* ============================================================================
+ * PQ-REACT // CONSOLE SKIN — CAM PQC handshake demo panel
+ * Apache License 2.0.
+ *
+ * Shared PQ-REACT operator-console identity (see pq-react-theme.css):
+ * IBM Plex Sans + JetBrains Mono, light blueprint canvas, cyan accent,
+ * hairline borders, HUD corner brackets, monospaced uppercase chrome.
+ * Loaded after panel.css; re-maps the panel's tokens + restyles its
+ * signature elements. No markup/JS changes. (Grafana iframes keep their
+ * own theme — only the surrounding chrome is unified.)
+ * ========================================================================== */
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+
+/* 1 — Token remap → light console palette. */
+:root {
+  --bg:        #eef1f4;
+  --panel:     #ffffff;
+  --panel-2:   #f5f8fb;
+  --border:    #d8dde3;
+  --text:      #0c1219;
+  --text-dim:  #6b7785;
+  --accent:    #15803d;       /* CAM keeps green for "ok/done" semantics */
+  --accent-2:  #0891b2;       /* cyan = running / brand accent */
+  --warn:      #b45309;
+  --err:       #b91c1c;
+  --link:      #1d4ed8;
+}
+
+body {
+  font-family: 'IBM Plex Sans', system-ui, sans-serif;
+  background-color: #eef1f4;
+  background-image:
+    linear-gradient(#e3e8ee 1px, transparent 1px),
+    linear-gradient(90deg, #e3e8ee 1px, transparent 1px);
+  background-size: 64px 64px; background-position: -1px -1px;
+  color: var(--text);
+}
+
+/* 2 — Top bar / brand → mono uppercase, hairline. */
+.topbar { border-bottom: 1px solid #b7bfc9 !important; background: #ffffff !important; }
+.brand .title { font-family: 'JetBrains Mono', monospace; text-transform: uppercase; letter-spacing: 0.12em; color: #0c1219; }
+.brand .subtitle { font-family: 'JetBrains Mono', monospace; text-transform: uppercase; letter-spacing: 0.04em; font-size: 11px; color: var(--text-dim); }
+.topbar-meta { font-family: 'JetBrains Mono', monospace; }
+.topbar-meta .external { color: var(--link); }
+
+/* 3 — Cards → square, hairline, HUD corner brackets. */
+.card {
+  position: relative; background: #ffffff; border: 1px solid var(--border);
+  border-radius: 0; box-shadow: none;
+}
+.card::before, .card::after {
+  content: ""; position: absolute; width: 9px; height: 9px;
+  border: 1px solid var(--accent-2); pointer-events: none;
+}
+.card::before { top: -1px; left: -1px; border-right: 0; border-bottom: 0; }
+.card::after  { top: -1px; right: -1px; border-left: 0; border-bottom: 0; }
+.card h2 {
+  font-family: 'JetBrains Mono', monospace; text-transform: uppercase;
+  letter-spacing: 0.12em; font-size: 13px; color: #0c1219;
+}
+
+/* 4 — Buttons → console. */
+button, .ghost {
+  font-family: 'JetBrains Mono', monospace; text-transform: uppercase;
+  letter-spacing: 0.10em; border-radius: 2px; border: 1px solid #b7bfc9;
+  background: #ffffff; color: #3b4554;
+}
+button:hover { border-color: var(--accent-2); color: var(--accent-2); }
+#run-btn, #quick-btn {
+  border-color: var(--accent-2); color: var(--accent-2); background: rgba(8,145,178,0.10);
+}
+#run-btn:hover, #quick-btn:hover { background: var(--accent-2); color: #fff; }
+#stop-btn { border-color: var(--err); color: var(--err); background: rgba(185,28,28,0.08); }
+#stop-btn:hover { background: var(--err); color: #fff; }
+
+/* 5 — Inputs / fields. */
+input, select { font-family: 'JetBrains Mono', monospace; border-radius: 2px; border: 1px solid #b7bfc9; background: #ffffff; color: #0c1219; }
+.hint { font-family: 'JetBrains Mono', monospace; color: var(--text-dim); }
+
+/* 6 — Status line + run summary. */
+.status-line { font-family: 'JetBrains Mono', monospace; text-transform: uppercase; letter-spacing: 0.08em; }
+.status-line.running { color: var(--accent-2); }
+.status-line.done    { color: var(--accent); }
+.summary .stat { background: var(--panel-2); border: 1px solid var(--border); border-radius: 2px; }
+.summary .stat .k { font-family: 'JetBrains Mono', monospace; text-transform: uppercase; letter-spacing: 0.10em; color: var(--text-dim); }
+.summary .stat .v { font-family: 'JetBrains Mono', monospace; color: #0c1219; }
+
+/* 7 — Log → console terminal. */
+.log {
+  font-family: 'JetBrains Mono', monospace; background: var(--panel-2);
+  border: 1px solid var(--border); color: #3b4554; border-radius: 0;
+}
+.log .l-meta { color: var(--accent-2); }
+.log .l-ok   { color: var(--accent); }
+.log .l-err  { color: var(--err); }
+
+/* 8 — iframe wrappers (Grafana) → hairline frame. */
+.iframe-wrap { border: 1px solid var(--border); border-radius: 0; background: #ffffff; }
