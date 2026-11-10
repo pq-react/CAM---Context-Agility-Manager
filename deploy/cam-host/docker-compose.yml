@@ -1,0 +1,58 @@
+# CAM host base stack — InfluxDB 2.7 + Telegraf 1.31 (host metrics).
+#
+# Snapshot of the compose project that ran at /opt/cam on the CAM testbed
+# host (captured 2026-11-10). Credentials were hard-coded there; here they
+# come from ./.env (copy .env.example -> .env and fill in).
+#
+# The demo panel stack (pqreact_hooks/cam_demo_panel) reads/writes this
+# InfluxDB via host.docker.internal:8086, so bring this stack up first.
+#
+#   cp .env.example .env && $EDITOR .env
+#   docker compose up -d
+
+services:
+  cam-influxdb:
+    image: influxdb:2.7
+    container_name: cam-influxdb
+    restart: unless-stopped
+    ports:
+      - "8086:8086"
+    environment:
+      DOCKER_INFLUXDB_INIT_MODE: setup
+      DOCKER_INFLUXDB_INIT_USERNAME: ${INFLUX_USERNAME:-pqreact}
+      DOCKER_INFLUXDB_INIT_PASSWORD: ${INFLUX_PASSWORD:?set INFLUX_PASSWORD in .env}
+      DOCKER_INFLUXDB_INIT_ORG: ${INFLUX_ORG:-pqreact}
+      DOCKER_INFLUXDB_INIT_BUCKET: ${INFLUX_BUCKET:-NUC_metrics}
+      DOCKER_INFLUXDB_INIT_RETENTION: ${INFLUX_RETENTION:-168h}
+      DOCKER_INFLUXDB_INIT_ADMIN_TOKEN: ${INFLUX_TOKEN:?set INFLUX_TOKEN in .env}
+    volumes:
+      - cam-influx-data:/var/lib/influxdb2
+      - cam-influx-config:/etc/influxdb2
+
+  cam-telegraf:
+    image: telegraf:1.31
+    container_name: cam-telegraf
+    restart: unless-stopped
+    network_mode: host
+    pid: host
+    privileged: true
+    environment:
+      HOST_PROC: /hostfs/proc
+      HOST_SYS: /hostfs/sys
+      HOST_ETC: /hostfs/etc
+      HOST_MOUNT_PREFIX: /hostfs
+      # Substituted into telegraf.conf at startup.
+      INFLUX_URL: ${TELEGRAF_INFLUX_URL:-http://localhost:8086}
+      INFLUX_TOKEN: ${INFLUX_TOKEN:?set INFLUX_TOKEN in .env}
+      INFLUX_ORG: ${INFLUX_ORG:-pqreact}
+      INFLUX_BUCKET: ${INFLUX_BUCKET:-NUC_metrics}
+      TELEGRAF_HOSTNAME: ${TELEGRAF_HOSTNAME:-pqreact-CAM}
+    volumes:
+      - /:/hostfs:ro
+      - ./telegraf.conf:/etc/telegraf/telegraf.conf:ro
+    depends_on:
+      - cam-influxdb
+
+volumes:
+  cam-influx-data:
+  cam-influx-config:
