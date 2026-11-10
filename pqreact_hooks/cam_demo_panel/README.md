@@ -49,10 +49,13 @@ form and live algorithm log.
 ## Quick start
 
 ```bash
+# 0. InfluxDB + Telegraf base stack (once per host):
+(cd deploy/cam-host && cp .env.example .env && $EDITOR .env && docker compose up -d)
+
 # 1. From the CAM repo root, on the CAM host:
 cd pqreact_hooks/cam_demo_panel/
 cp .env.example .env
-# Edit .env: set CAM_PUBLIC_HOST + INFLUX_TOKEN.
+# Edit .env: set CAM_PUBLIC_HOST, INFLUX_TOKEN and GRAFANA_ADMIN_PASSWORD.
 
 # 2. Bring it up:
 docker compose up -d --build
@@ -97,7 +100,9 @@ sensible for a single-VM CAM deployment.
 | `INFLUX_ORG` | `pqreact` | InfluxDB org. |
 | `INFLUX_BUCKET` | `NUC_metrics` | Bucket Telegraf is already writing into. |
 | `INFLUX_TOKEN` | _empty_ | Required if you want per-handshake samples to land in InfluxDB. Empty disables — host metrics still flow via Telegraf. |
-| `GRAFANA_ADMIN_PASSWORD` | `pqreact-cam-demo` | For the `admin` login. Anonymous Viewer is on regardless. |
+| `GRAFANA_ADMIN_PASSWORD` | _required_ | For the `admin` login (compose refuses to start without it). Anonymous Viewer is on regardless. |
+| `MARIADB_HOST` / `MARIADB_PORT` / `MARIADB_USER` / `MARIADB_PASSWORD` / `MARIADB_NAME` | _empty_ / `3307` / `pqreact` / _empty_ / `PQREACT` | Optional mirror of run summaries into the PQ-REACT MCP MariaDB. Empty host or password disables it. |
+| `CAM_SOURCE_TAG` | `cam-context-agility` | Source tag on mirrored rows; the chat advisor filters on it. |
 | `QUJATA_API_BASE` | _empty_ | When set, the panel will offer a "run on QUJATA" toggle that fans the curl loop out to the remote QUJATA stack instead of the local containers. Off by default — this stack IS the local backup. |
 
 ## API reference
@@ -168,6 +173,35 @@ replacement — it's a single-page focused demo for showing the
 handshake matrix end-to-end on one machine, with the same visual
 shape as the original (test execution + two Grafana dashboards on the
 same screen).
+
+## TLS certificates
+
+No certificate or private key is stored in this repo. The `nginx` image
+inherits the CA and leaf certificate that the upstream
+`openquantumsafe/nginx` image generates **at its own build time**
+(`/opt/nginx/CA.key`, `/opt/nginx/cacert/`, `/opt/nginx/pki/server.crt`,
+`/opt/nginx/pki/server.key`), and `nginx.conf` points at those paths. The
+curl client runs with `-k`, so the self-signed chain is fine for the demo.
+Rebuilding the image (`docker compose build --pull pqc-nginx`) picks up whatever
+the current upstream image ships.
+
+To use your own (e.g. a specific PQC signature algorithm) generate them with
+the OQS OpenSSL from the curl image and bind-mount the directory:
+
+```bash
+mkdir -p nginx/pki        # git-ignored
+docker run --rm -v "$PWD/nginx/pki:/pki" -w /pki openquantumsafe/curl:latest sh -c '
+  openssl req -x509 -new -newkey mldsa65 -keyout CA.key -out CA.crt -nodes \
+    -subj "/CN=CAM demo CA" -days 365 &&
+  openssl req -new -newkey mldsa65 -keyout server.key -out server.csr -nodes \
+    -subj "/CN=localhost" &&
+  openssl x509 -req -in server.csr -CA CA.crt -CAkey CA.key -CAcreateserial \
+    -out server.crt -days 365'
+```
+
+then add a `volumes:` entry `- ./nginx/pki:/opt/nginx/pki:ro` to the
+`pqc-nginx` service in `docker-compose.yml`. Keep `nginx/pki/` out of git (it is in
+`.gitignore`).
 
 ## Troubleshooting
 

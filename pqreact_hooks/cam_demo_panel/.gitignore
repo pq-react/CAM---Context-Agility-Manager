@@ -1,0 +1,6 @@
+.env
+# TLS material for the PQC nginx is never committed (see README, "TLS certificates").
+nginx/pki/
+*.key
+*.pem
+*.csr
